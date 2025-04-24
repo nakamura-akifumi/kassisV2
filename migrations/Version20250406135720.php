@@ -1,0 +1,54 @@
+<?php
+
+declare(strict_types=1);
+
+namespace DoctrineMigrations;
+
+use Doctrine\DBAL\Schema\Schema;
+use Doctrine\Migrations\AbstractMigration;
+
+/**
+ * Auto-generated Migration: Please modify to your needs!
+ */
+final class Version20250406135720 extends AbstractMigration
+{
+    public function getDescription(): string
+    {
+        return '';
+    }
+
+    public function up(Schema $schema): void
+    {
+        // this up() migration is auto-generated, please modify it to your needs
+        $this->addSql(<<<'SQL'
+            CREATE TABLE manifestation (id INT AUTO_INCREMENT NOT NULL,
+                              title LONGTEXT NOT NULL,
+                              title_transcription LONGTEXT DEFAULT NULL,
+                              identifier VARCHAR(255) NOT NULL,
+                              external_identifier1 VARCHAR(255) DEFAULT NULL,
+                              external_identifier2 VARCHAR(255) DEFAULT NULL,
+                              external_identifier3 VARCHAR(255) DEFAULT NULL, 
+                              description LONGTEXT DEFAULT NULL, 
+                              buyer VARCHAR(255), 
+                              buyer_identifier LONGTEXT, 
+                              purchase_date DATE DEFAULT NULL,
+                              type1 VARCHAR(255) NULL,
+                              type2 VARCHAR(255) DEFAULT NULL,
+                              type3 VARCHAR(255) DEFAULT NULL,
+                              type4 VARCHAR(255) DEFAULT NULL,
+                              location1 VARCHAR(255) DEFAULT NULL,
+                              location2 VARCHAR(255) DEFAULT NULL,
+                              created_at DATETIME NOT NULL,
+                              updated_at DATETIME NOT NULL,
+                              PRIMARY KEY(id)) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci ENGINE = InnoDB
+        SQL);
+    }
+
+    public function down(Schema $schema): void
+    {
+        // this down() migration is auto-generated, please modify it to your needs
+        $this->addSql(<<<'SQL'
+            DROP TABLE manifestation
+        SQL);
+    }
+}

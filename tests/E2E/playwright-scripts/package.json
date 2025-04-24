@@ -1,0 +1,14 @@
+{
+  "name": "playwright-scripts",
+  "version": "1.0.0",
+  "description": "",
+  "main": "tests/manifestation.spec.js",
+  "scripts": {},
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@playwright/test": "^1.51.1",
+    "@types/node": "^22.14.0"
+  }
+}

@@ -1,0 +1,85 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Manifestation 詳細{% endblock %}
+
+{% block body %}
+    <h1>Manifestation 詳細</h1>
+
+    <table class="table">
+        <tbody>
+        <tr>
+            <th>ID</th>
+            <td>{{ manifestation.id }}</td>
+        </tr>
+        <tr>
+            <th>タイトル</th>
+            <td>{{ manifestation.title }}</td>
+        </tr>
+        <tr>
+            <th>代替タイトル</th>
+            <td>{{ manifestation.titleTranscription }}</td>
+        </tr>
+        <tr>
+            <th>識別子</th>
+            <td>{{ manifestation.identifier }}</td>
+        </tr>
+        <tr>
+            <th>外部識別子1</th>
+            <td>{{ manifestation.externalIdentifier1 }}</td>
+        </tr>
+        <tr>
+            <th>外部識別子2</th>
+            <td>{{ manifestation.externalIdentifier2 }}</td>
+        </tr>
+        <tr>
+            <th>外部識別子3</th>
+            <td>{{ manifestation.externalIdentifier3 }}</td>
+        </tr>
+        <tr>
+            <th>説明</th>
+            <td>{{ manifestation.description }}</td>
+        </tr>
+        <tr>
+            <th>購入者</th>
+            <td>{{ manifestation.buyer }}</td>
+        </tr>
+        <tr>
+            <th>購入者識別子</th>
+            <td>{{ manifestation.buyerIdentifier }}</td>
+        </tr>
+        <tr>
+            <th>購入日</th>
+            <td>{{ manifestation.purchaseDate ? manifestation.purchaseDate|date('Y-m-d') : '' }}</td>
+        </tr>
+        <tr>
+            <th>タイプ1</th>
+            <td>{{ manifestation.type1 }}</td>
+        </tr>
+        <tr>
+            <th>タイプ2</th>
+            <td>{{ manifestation.type2 }}</td>
+        </tr>
+        <tr>
+            <th>タイプ3</th>
+            <td>{{ manifestation.type3 }}</td>
+        </tr>
+        <tr>
+            <th>タイプ4</th>
+            <td>{{ manifestation.type4 }}</td>
+        </tr>
+        <tr>
+            <th>場所1</th>
+            <td>{{ manifestation.location1 }}</td>
+        </tr>
+        <tr>
+            <th>場所2</th>
+            <td>{{ manifestation.location2 }}</td>
+        </tr>
+        </tbody>
+    </table>
+
+    <a href="{{ path('app_manifestation_index') }}" class="btn btn-secondary">一覧に戻る</a>
+    <a href="{{ path('app_manifestation_edit', {'id': manifestation.id}) }}" class="btn btn-primary">編集</a>
+
+    {{ include('manifestation/_delete_form.html.twig') }}
+{% endblock %}

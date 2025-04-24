@@ -1,0 +1,84 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}ホームページ{% endblock %}
+
+{% block body %}
+    <div class="container mt-4">
+        <!-- 検索フォーム -->
+        <div class="card mt-4 mb-4">
+            <div class="card-header">
+                <h5>書誌検索</h5>
+            </div>
+            <div class="card-body">
+                <form id="search-form" class="row g-3">
+                    <div class="col-md-8">
+                        <input type="text" name="q" autofocus class="form-control" placeholder="タイトル、識別子などで検索..."
+                               value="{{ app.request.query.get('q') }}">
+                    </div>
+                    <div class="col-md-4">
+                        <button type="submit" class="btn btn-primary w-100">検索</button>
+                    </div>
+                    <div class="col-12 mt-2">
+                        <small class="text-muted">タイトル、識別子、説明など様々な項目から検索できます</small>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- 検索結果を表示するエリア -->
+        <div id="search-results" class="mt-4">
+            <!-- ここに検索結果が動的に表示されます -->
+        </div>
+
+        <!-- ローディングインジケーター -->
+        <div id="loading" class="text-center d-none">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">読み込み中...</span>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchForm = document.getElementById('search-form');
+            const searchResults = document.getElementById('search-results');
+            const loading = document.getElementById('loading');
+
+            searchForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+
+                // フォームデータを取得
+                const formData = new FormData(searchForm);
+                const queryParams = new URLSearchParams(formData);
+
+                // ローディング表示
+                loading.classList.remove('d-none');
+                searchResults.innerHTML = '';
+
+                // AJAXリクエスト
+                fetch('{{ path('app_manifestation_search') }}?' + queryParams.toString(), {
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                    .then(response => response.text())
+                    .then(html => {
+                        // ローディング非表示
+                        loading.classList.add('d-none');
+
+                        // 結果を表示
+                        searchResults.innerHTML = html;
+                    })
+                    .catch(error => {
+                        console.error('検索中にエラーが発生しました:', error);
+                        loading.classList.add('d-none');
+                        searchResults.innerHTML = '<div class="alert alert-danger">検索中にエラーが発生しました。再度お試しください。</div>';
+                    });
+            });
+        });
+    </script>
+{% endblock %}

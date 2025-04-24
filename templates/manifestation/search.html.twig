@@ -1,0 +1,43 @@
+{% block body %}
+    <table class="table">
+        <thead>
+            <tr>
+                <th>{{ 'Model.Manifestation.fields.Id' | trans }}</th>
+                <th>{{ 'Model.Manifestation.fields.Title' | trans }}</th>
+                <th>{{ 'Model.Manifestation.fields.Identifier' | trans }}</th>
+                <th>{{ 'Model.Manifestation.fields.External_identifier1' | trans }}</th>
+                <th>{{ 'Model.Manifestation.fields.External_identifier2' | trans }}</th>
+                <th>{{ 'Model.Manifestation.fields.External_identifier3' | trans }}</th>
+                <th>{{ 'Model.Manifestation.fields.Description' | trans }}</th>
+                <th>{{ 'Model.Manifestation.fields.Buyer' | trans }}</th>
+                <th>{{ 'Model.Manifestation.fields.Buyer_identifier' | trans }}</th>
+                <th>{{ 'Model.Manifestation.fields.Purchase_date' | trans }}</th>
+                <th>{{ 'Model.actions' | trans }}</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for manifestation in manifestations %}
+            <tr>
+                <td>{{ manifestation.id }}</td>
+                <td>{{ manifestation.title }}</td>
+                <td>{{ manifestation.identifier }}</td>
+                <td>{{ manifestation.externalIdentifier1 }}</td>
+                <td>{{ manifestation.externalIdentifier2 }}</td>
+                <td>{{ manifestation.externalIdentifier3 }}</td>
+                <td>{{ manifestation.description }}</td>
+                <td>{{ manifestation.buyer }}</td>
+                <td>{{ manifestation.buyerIdentifier }}</td>
+                <td>{{ manifestation.purchaseDate ? manifestation.purchaseDate|date('Y-m-d') : '' }}</td>
+                <td>
+                    <a href="{{ path('app_manifestation_show', {'id': manifestation.id}) }}">show</a>
+                    <a href="{{ path('app_manifestation_edit', {'id': manifestation.id}) }}">edit</a>
+                </td>
+            </tr>
+        {% else %}
+            <tr>
+                <td colspan="9">no records found</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

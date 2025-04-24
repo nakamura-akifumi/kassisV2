@@ -1,0 +1,105 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}書誌情報の編集{% endblock %}
+
+{% block body %}
+    <div class="container py-4">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-primary text-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h2 class="mb-0 fs-4"><i class="fas fa-edit me-2"></i>書誌情報の編集</h2>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb mb-0 small">
+                            <li class="breadcrumb-item"><a href="{{ path('app_home') }}" class="text-white">ホーム</a></li>
+                            <li class="breadcrumb-item"><a href="{{ path('app_manifestation_index') }}" class="text-white">書誌一覧</a></li>
+                            <li class="breadcrumb-item active text-white-50" aria-current="page">編集</li>
+                        </ol>
+                    </nav>
+                </div>
+            </div>
+
+            <div class="card-body p-4">
+                {{ include('manifestation/_form.html.twig', {'button_label': '更新する'}) }}
+            </div>
+
+            <div class="card-footer bg-light d-flex justify-content-between">
+                <a href="{{ path('app_manifestation_index') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-1"></i> 一覧に戻る
+                </a>
+
+                <div class="btn-group">
+                    <a href="{{ path('app_manifestation_show', {'id': manifestation.id}) }}" class="btn btn-info text-white">
+                        <i class="fas fa-eye me-1"></i> 詳細を表示
+                    </a>
+                    <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                        <i class="fas fa-trash-alt me-1"></i> 削除
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 削除確認モーダル -->
+    <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title" id="deleteModalLabel">削除の確認</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>この書誌情報を本当に削除しますか？</p>
+                    <p class="text-danger"><strong>注意:</strong> この操作は取り消せません。</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+                    {{ include('manifestation/_delete_form.html.twig', {'btn_class': 'btn-danger'}) }}
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        .form-control:focus, .form-select:focus {
+            border-color: #86b7fe;
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+        }
+
+        .card {
+            border-radius: 0.5rem;
+            overflow: hidden;
+        }
+
+        .card-header {
+            border-bottom: none;
+        }
+
+        .btn {
+            border-radius: 0.3rem;
+            padding: 0.5rem 1rem;
+            font-weight: 500;
+        }
+
+        .breadcrumb-item + .breadcrumb-item::before {
+            color: rgba(255, 255, 255, 0.6);
+        }
+    </style>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+        // フォーム要素にフォーカスが当たった時の視覚的フィードバック
+        document.addEventListener('DOMContentLoaded', function() {
+            const formControls = document.querySelectorAll('.form-control, .form-select');
+            formControls.forEach(element => {
+                element.addEventListener('focus', function() {
+                    this.closest('.mb-3').classList.add('was-validated');
+                });
+            });
+        });
+    </script>
+{% endblock %}

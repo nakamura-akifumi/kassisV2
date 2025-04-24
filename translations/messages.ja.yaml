@@ -1,0 +1,24 @@
+SystemTitle:
+  HtmlHeader: "kassisV2"
+  NavbarBrandTitle: "kassisV2"
+Screen:
+  Manifestation:
+    Index: "書誌一覧"
+    Search: "書誌検索"
+    Show: "詳細表示"
+    Create: "新規登録"
+Model:
+  actions: "操作"
+  Manifestation:
+    name: "書誌"
+    fields:
+      Id: "ID"
+      Title: "タイトル"
+      Identifier: "識別子"
+      External_identifier1: "外部識別子1"
+      External_identifier2: "外部識別子2"
+      External_identifier3: "外部識別子3"
+      Description: "説明"
+      Buyer: "購入先"
+      Buyer_identifier: "購入先識別子"
+      Purchase_date: "購入日"
