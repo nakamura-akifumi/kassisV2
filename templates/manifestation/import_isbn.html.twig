@@ -1,0 +1,33 @@
+{# templates/manifestation/import_isbn.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block title %}ISBNからインポート{% endblock %}
+
+{% block body %}
+    <div class="container">
+        <h1>ISBNから書籍情報をインポート</h1>
+
+        <p class="mb-4">
+            国立国会図書館のデータベースからISBNを使って書籍情報をインポートします。
+            ISBN-10またはISBN-13を入力してください。ハイフンの有無は問いません。
+        </p>
+
+        {% if error %}
+            <div class="alert alert-danger">{{ error }}</div>
+        {% endif %}
+
+        {{ form_start(form) }}
+        <div class="mb-3">
+            {{ form_label(form.isbn) }}
+            {{ form_widget(form.isbn, {'attr': {'class': 'form-control'}}) }}
+            {{ form_errors(form.isbn) }}
+            <small class="form-text text-muted">書籍のISBNコードを入力してください</small>
+        </div>
+
+        <div class="mb-3">
+            {{ form_widget(form.submit, {'attr': {'class': 'btn btn-primary'}}) }}
+            <a href="{{ path('app_manifestation_index') }}" class="btn btn-secondary">戻る</a>
+        </div>
+        {{ form_end(form) }}
+    </div>
+{% endblock %}
