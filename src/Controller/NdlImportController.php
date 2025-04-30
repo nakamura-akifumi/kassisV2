@@ -3,7 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\Manifestation;
-use App\Form\IsbnImportType;
+use App\Form\IsbnImportFormType;
 use App\Service\NdlSearchService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -19,7 +19,7 @@ class NdlImportController extends AbstractController
         NdlSearchService $ndlSearchService, 
         EntityManagerInterface $entityManager
     ): Response {
-        $form = $this->createForm(IsbnImportType::class);
+        $form = $this->createForm(IsbnImportFormType::class);
         $form->handleRequest($request);
         
         $result = null;

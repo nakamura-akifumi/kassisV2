@@ -1,326 +1,180 @@
-{{ form_start(form, {'attr': {'class': 'needs-validation form-modern', 'novalidate': 'novalidate'}}) }}
+{{ form_start(form, {'attr': {'class': 'needs-validation', 'novalidate': 'novalidate'}}) }}
 
-<div class="form-container">
-    <div class="row g-4">
-        {% set mainFields = ['title', 'title_transcription', 'identifier', 'description'] %}
-        {% set secondaryFields = ['external_identifier1', 'external_identifier2', 'external_identifier3'] %}
-        {% set hiddenFields = ['_token', 'submit'] %}
-
-        {# メインフィールド - 重要な情報 #}
-        <div class="col-12 mb-4">
-            <div class="section-heading">
-                <span class="section-icon"><i class="fas fa-bookmark"></i></span>
-                <h4 class="section-title">基本情報</h4>
+<div class="row g-2">
+    {# 書誌情報の基本セクション #}
+    <div class="col-md-12">
+        <div class="card shadow-sm mb-2">
+            <div class="card-header bg-light py-1">
+                <h3 class="card-title h6 mb-0"><i class="fas fa-book me-1"></i>基本情報</h3>
             </div>
-
-            <div class="card shadow-sm border-0 rounded-lg p-3">
-                <div class="card-body">
-                    {% for fieldName in mainFields %}
-                        {% if form[fieldName] is defined %}
-                            <div class="form-floating mb-3">
-                                {{ form_widget(form[fieldName], {
-                                    'attr': {
-                                        'class': 'form-control form-control-lg',
-                                        'placeholder': fieldName|capitalize,
-                                        'data-field': fieldName
-                                    }
-                                }) }}
-                                {{ form_label(form[fieldName], null, {'label_attr': {'class': 'form-floating-label'}}) }}
-
-                                {% if form[fieldName].vars.errors|length > 0 %}
-                                    <div class="invalid-feedback d-block">
-                                        {{ form_errors(form[fieldName]) }}
-                                    </div>
-                                {% endif %}
-
-                                {% if fieldName == 'title' %}
-                                    <div class="form-text">書籍のタイトルを入力してください</div>
-                                {% elseif fieldName == 'title_transcription' %}
-                                    <div class="form-text">書籍のヨミを入力してください</div>
-                                {% elseif fieldName == 'identifier' %}
-                                    <div class="form-text">一意の識別子（組織内の識別子やISBN等）を入力してください</div>
-                                {% elseif fieldName == 'description' %}
-                                    <div class="form-text">書誌に関する詳細な説明（あらすじや特徴）を記入してください</div>
-                                {% endif %}
+            <div class="card-body py-2">
+                <div class="row g-2">
+                    <div class="col-md-6">
+                        {{ form_label(form.title, 'タイトル', {'label_attr': {'class': 'form-label small mb-0 required fw-bold text-danger'}}) }}
+                        {{ form_widget(form.title, {'attr': {'class': 'form-control form-control-sm border-danger', 'placeholder': 'タイトルを入力（必須）'}}) }}
+                        {% if not form.title.vars.valid %}
+                            <div class="invalid-feedback d-block">
+                                {{ form_errors(form.title) }}
                             </div>
                         {% endif %}
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
-
-        {# 外部識別子セクション #}
-        <div class="col-12 mb-4">
-            <div class="section-heading">
-                <span class="section-icon"><i class="fas fa-fingerprint"></i></span>
-                <h4 class="section-title">外部識別子</h4>
-            </div>
-
-            <div class="card shadow-sm border-0 rounded-lg p-3">
-                <div class="card-body">
-                    <div class="row">
-                        {% for fieldName in secondaryFields %}
-                            {% if form[fieldName] is defined %}
-                                <div class="col-md-4">
-                                    <div class="form-floating mb-3">
-                                        {{ form_widget(form[fieldName], {
-                                            'attr': {
-                                                'class': 'form-control',
-                                                'placeholder': fieldName|replace({'_': ' '})|capitalize,
-                                                'data-field': fieldName
-                                            }
-                                        }) }}
-                                        {{ form_label(form[fieldName], null, {'label_attr': {'class': 'form-floating-label'}}) }}
-
-                                        {% if form[fieldName].vars.errors|length > 0 %}
-                                            <div class="invalid-feedback d-block">
-                                                {{ form_errors(form[fieldName]) }}
-                                            </div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            {% endif %}
-                        {% endfor %}
                     </div>
-                </div>
-            </div>
-        </div>
-
-        {# その他のフィールド #}
-        <div class="col-12 mb-4">
-            <div class="section-heading">
-                <span class="section-icon"><i class="fas fa-info-circle"></i></span>
-                <h4 class="section-title">追加情報</h4>
-            </div>
-
-            <div class="card shadow-sm border-0 rounded-lg p-3">
-                <div class="card-body">
-                    <div class="row g-3">
-                        {% for child in form %}
-                            {% if
-                                child.vars.name not in mainFields and
-                                child.vars.name not in secondaryFields and
-                                child.vars.name not in hiddenFields
-                            %}
-                                <div class="col-md-6">
-                                    {% if child.vars.block_prefixes[1] == 'date' or child.vars.block_prefixes[1] == 'datetime' %}
-                                        <div class="form-group mb-3">
-                                            {{ form_label(child, null, {'label_attr': {'class': 'form-label fw-semibold'}}) }}
-                                            <div class="input-group">
-                                                <span class="input-group-text bg-light"><i class="fas fa-calendar-alt"></i></span>
-                                                {{ form_widget(child, {'attr': {'class': 'form-control datepicker'}}) }}
-                                            </div>
-                                            {% if child.vars.errors|length > 0 %}
-                                                <div class="invalid-feedback d-block">
-                                                    {{ form_errors(child) }}
-                                                </div>
-                                            {% endif %}
-                                        </div>
-                                    {% elseif child.vars.block_prefixes[1] == 'money' or child.vars.name matches '/price|cost|amount/i' %}
-                                        <div class="form-group mb-3">
-                                            {{ form_label(child, null, {'label_attr': {'class': 'form-label fw-semibold'}}) }}
-                                            <div class="input-group">
-                                                <span class="input-group-text bg-light"><i class="fas fa-yen-sign"></i></span>
-                                                {{ form_widget(child, {'attr': {'class': 'form-control'}}) }}
-                                            </div>
-                                            {% if child.vars.errors|length > 0 %}
-                                                <div class="invalid-feedback d-block">
-                                                    {{ form_errors(child) }}
-                                                </div>
-                                            {% endif %}
-                                        </div>
-                                    {% elseif child.vars.block_prefixes[1] == 'choice' %}
-                                        <div class="form-group mb-3">
-                                            {{ form_label(child, null, {'label_attr': {'class': 'form-label fw-semibold'}}) }}
-                                            {{ form_widget(child, {'attr': {'class': 'form-select'}}) }}
-                                            {% if child.vars.errors|length > 0 %}
-                                                <div class="invalid-feedback d-block">
-                                                    {{ form_errors(child) }}
-                                                </div>
-                                            {% endif %}
-                                        </div>
-                                    {% else %}
-                                        <div class="form-floating mb-3">
-                                            {{ form_widget(child, {
-                                                'attr': {
-                                                    'class': 'form-control',
-                                                    'placeholder': child.vars.label|default(child.vars.name|humanize)
-                                                }
-                                            }) }}
-                                            {{ form_label(child, null, {'label_attr': {'class': 'form-floating-label'}}) }}
-                                            {% if child.vars.errors|length > 0 %}
-                                                <div class="invalid-feedback d-block">
-                                                    {{ form_errors(child) }}
-                                                </div>
-                                            {% endif %}
-                                        </div>
-                                    {% endif %}
-                                </div>
-                            {% endif %}
-                        {% endfor %}
+                    <div class="col-md-6">
+                        {{ form_label(form.title_transcription, 'タイトル読み', {'label_attr': {'class': 'form-label small mb-0'}}) }}
+                        {{ form_widget(form.title_transcription, {'attr': {'class': 'form-control form-control-sm', 'placeholder': 'タイトルの読み'}}) }}
+                    </div>
+                    <div class="col-md-6">
+                        {{ form_label(form.identifier, '識別子 (ISBN等)', {'label_attr': {'class': 'form-label small mb-0 required fw-bold text-danger'}}) }}
+                        {{ form_widget(form.identifier, {'attr': {'class': 'form-control form-control-sm border-danger', 'placeholder': '例：978-4-XXXX-XXXX-X（必須）'}}) }}
+                        {% if not form.identifier.vars.valid %}
+                            <div class="invalid-feedback d-block">
+                                {{ form_errors(form.identifier) }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        {{ form_label(form.description, '説明', {'label_attr': {'class': 'form-label small mb-0'}}) }}
+                        {{ form_widget(form.description, {'attr': {'class': 'form-control form-control-sm', 'placeholder': '説明やメモ', 'rows': 1}}) }}
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="form-action-bar mt-4">
-        <button type="submit" class="btn btn-primary btn-lg px-4 py-2 d-flex align-items-center">
-            <i class="fas {{ button_icon|default('fa-save') }} me-2"></i>
-            <span>{{ button_label|default('保存') }}</span>
-        </button>
+    <div class="col-md-4">
+        {# 外部識別子セクション #}
+        <div class="card shadow-sm mb-2">
+            <div class="card-header bg-light py-1">
+                <h3 class="card-title h6 mb-0"><i class="fas fa-fingerprint me-1"></i>外部識別子</h3>
+            </div>
+            <div class="card-body py-2">
+                <div class="row g-1">
+                    <div class="col-12">
+                        {{ form_label(form.external_identifier1, '外部識別子 1', {'label_attr': {'class': 'form-label small mb-0'}}) }}
+                        {{ form_widget(form.external_identifier1, {'attr': {'class': 'form-control form-control-sm', 'placeholder': '外部識別子1'}}) }}
+                    </div>
+                    <div class="col-12">
+                        {{ form_label(form.external_identifier2, '外部識別子 2', {'label_attr': {'class': 'form-label small mb-0'}}) }}
+                        {{ form_widget(form.external_identifier2, {'attr': {'class': 'form-control form-control-sm', 'placeholder': '外部識別子2'}}) }}
+                    </div>
+                    <div class="col-12">
+                        {{ form_label(form.external_identifier3, '外部識別子 3', {'label_attr': {'class': 'form-label small mb-0'}}) }}
+                        {{ form_widget(form.external_identifier3, {'attr': {'class': 'form-control form-control-sm', 'placeholder': '外部識別子3'}}) }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# 情報源と貢献者セクション #}
+    <div class="col-md-4">
+        <div class="card shadow-sm mb-2">
+            <div class="card-header bg-light py-1">
+                <h3 class="card-title h6 mb-0"><i class="fas fa-info-circle me-1"></i>情報源と貢献者</h3>
+            </div>
+            <div class="card-body py-2">
+                <div class="row g-1">
+                    <div class="col-12">
+                        {{ form_label(form.record_source, '情報源', {'label_attr': {'class': 'form-label small mb-0'}}) }}
+                        {{ form_widget(form.record_source, {'attr': {'class': 'form-control form-control-sm', 'placeholder': '例：NDL, ISBN等'}}) }}
+                    </div>
+                    <div class="col-12">
+                        {{ form_label(form.contributor1, '貢献者 1', {'label_attr': {'class': 'form-label small mb-0'}}) }}
+                        {{ form_widget(form.contributor1, {'attr': {'class': 'form-control form-control-sm', 'placeholder': '著者・出版社など'}}) }}
+                    </div>
+                    <div class="col-12">
+                        {{ form_label(form.contributor2, '貢献者 2', {'label_attr': {'class': 'form-label small mb-0'}}) }}
+                        {{ form_widget(form.contributor2, {'attr': {'class': 'form-control form-control-sm', 'placeholder': '著者・出版社など'}}) }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# 購入情報セクション #}
+    <div class="col-md-4">
+        <div class="card shadow-sm mb-2">
+            <div class="card-header bg-light py-1">
+                <h3 class="card-title h6 mb-0"><i class="fas fa-shopping-cart me-1"></i>購入情報</h3>
+            </div>
+            <div class="card-body py-2">
+                <div class="row g-1">
+                    <div class="col-6">
+                        {{ form_label(form.buyer, '購入者', {'label_attr': {'class': 'form-label small mb-0'}}) }}
+                        {{ form_widget(form.buyer, {'attr': {'class': 'form-control form-control-sm', 'placeholder': '購入者名'}}) }}
+                    </div>
+                    <div class="col-6">
+                        {{ form_label(form.buyer_identifier, '購入者ID', {'label_attr': {'class': 'form-label small mb-0'}}) }}
+                        {{ form_widget(form.buyer_identifier, {'attr': {'class': 'form-control form-control-sm', 'placeholder': '購入者ID'}}) }}
+                    </div>
+                    <div class="col-12">
+                        {{ form_label(form.purchase_date, '購入日', {'label_attr': {'class': 'form-label small mb-0'}}) }}
+                        {{ form_widget(form.purchase_date, {'attr': {'class': 'form-control form-control-sm'}}) }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# 分類情報セクション #}
+    <div class="col-md-6">
+        <div class="card shadow-sm mb-2">
+            <div class="card-header bg-light py-1">
+                <h3 class="card-title h6 mb-0"><i class="fas fa-tags me-1"></i>分類情報</h3>
+            </div>
+            <div class="card-body py-2">
+                <div class="row g-1">
+                    <div class="col-md-3">
+                        {{ form_label(form.type1, '分類 1', {'label_attr': {'class': 'form-label small mb-0'}}) }}
+                        {{ form_widget(form.type1, {'attr': {'class': 'form-control form-control-sm', 'placeholder': '分類1'}}) }}
+                    </div>
+                    <div class="col-md-3">
+                        {{ form_label(form.type2, '分類 2', {'label_attr': {'class': 'form-label small mb-0'}}) }}
+                        {{ form_widget(form.type2, {'attr': {'class': 'form-control form-control-sm', 'placeholder': '分類2'}}) }}
+                    </div>
+                    <div class="col-md-3">
+                        {{ form_label(form.type3, '分類 3', {'label_attr': {'class': 'form-label small mb-0'}}) }}
+                        {{ form_widget(form.type3, {'attr': {'class': 'form-control form-control-sm', 'placeholder': '分類3'}}) }}
+                    </div>
+                    <div class="col-md-3">
+                        {{ form_label(form.type4, '分類 4', {'label_attr': {'class': 'form-label small mb-0'}}) }}
+                        {{ form_widget(form.type4, {'attr': {'class': 'form-control form-control-sm', 'placeholder': '分類4'}}) }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# 配置場所セクション #}
+    <div class="col-md-6">
+        <div class="card shadow-sm mb-2">
+            <div class="card-header bg-light py-1">
+                <h3 class="card-title h6 mb-0"><i class="fas fa-map-marker-alt me-1"></i>配置場所</h3>
+            </div>
+            <div class="card-body py-2">
+                <div class="row g-1">
+                    <div class="col-md-6">
+                        {{ form_label(form.location1, '配置場所 1', {'label_attr': {'class': 'form-label small mb-0'}}) }}
+                        {{ form_widget(form.location1, {'attr': {'class': 'form-control form-control-sm', 'placeholder': '配置場所1'}}) }}
+                    </div>
+                    <div class="col-md-6">
+                        {{ form_label(form.location2, '配置場所 2', {'label_attr': {'class': 'form-label small mb-0'}}) }}
+                        {{ form_widget(form.location2, {'attr': {'class': 'form-control form-control-sm', 'placeholder': '配置場所2'}}) }}
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
-{{ form_rest(form) }}
+<div class="alert alert-info mt-2 py-1 small">
+    <i class="fas fa-info-circle me-1"></i> <span class="text-danger fw-bold">赤字のラベル</span>は必須項目です。
+</div>
+
+<div class="d-grid gap-2 d-md-flex justify-content-md-end mt-2">
+    <button class="btn btn-primary btn-sm">
+        <i class="fas fa-save me-1"></i>
+        {{ button_label|default('保存') }}
+    </button>
+</div>
+
 {{ form_end(form) }}
-
-<style>
-    .form-modern {
-        --bs-border-radius: 0.5rem;
-        --primary-color: #4361ee;
-        --input-focus-border-color: #4361ee;
-        --input-focus-box-shadow: 0 0 0 0.25rem rgba(67, 97, 238, 0.25);
-    }
-
-    .form-container {
-        max-width: 1140px;
-        margin: 0 auto;
-    }
-
-    .card {
-        transition: all 0.2s;
-        border-radius: var(--bs-border-radius);
-    }
-
-    .card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
-    }
-
-    .section-heading {
-        display: flex;
-        align-items: center;
-        margin-bottom: 1rem;
-        color: #495057;
-    }
-
-    .section-icon {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 36px;
-        height: 36px;
-        border-radius: 50%;
-        background-color: var(--primary-color);
-        color: white;
-        margin-right: 0.75rem;
-    }
-
-    .section-title {
-        margin: 0;
-        font-size: 1.25rem;
-        font-weight: 600;
-    }
-
-    .form-floating > .form-control:focus,
-    .form-floating > .form-control:not(:placeholder-shown) {
-        border-color: var(--input-focus-border-color);
-    }
-
-    .form-floating > .form-control:focus ~ label {
-        color: var(--primary-color);
-    }
-
-    .form-action-bar {
-        display: flex;
-        justify-content: flex-end;
-    }
-
-    .form-text {
-        font-size: 0.825rem;
-        color: #6c757d;
-        margin-top: 0.25rem;
-    }
-
-    .input-group-text {
-        border: none;
-    }
-
-    .form-control, .form-select {
-        border: 1px solid #ced4da;
-        transition: all 0.2s;
-    }
-
-    .form-control:focus, .form-select:focus {
-        border-color: var(--input-focus-border-color);
-        box-shadow: var(--input-focus-box-shadow);
-    }
-
-    .btn-primary {
-        background-color: var(--primary-color);
-        border-color: var(--primary-color);
-        box-shadow: 0 4px 6px rgba(67, 97, 238, 0.2);
-        transition: all 0.3s;
-    }
-
-    .btn-primary:hover {
-        background-color: #3651d9;
-        border-color: #3651d9;
-        transform: translateY(-2px);
-        box-shadow: 0 6px 10px rgba(67, 97, 238, 0.25);
-    }
-
-    .btn-primary:active {
-        transform: translateY(0);
-        box-shadow: 0 2px 5px rgba(67, 97, 238, 0.15);
-    }
-
-    .invalid-feedback {
-        font-weight: 500;
-        margin-top: 0.25rem;
-    }
-</style>
-
-<script>
-    // フォームバリデーションの設定
-    (function() {
-        'use strict';
-        document.addEventListener('DOMContentLoaded', function() {
-            const forms = document.querySelectorAll('.needs-validation');
-
-            Array.from(forms).forEach(form => {
-                // 送信時のバリデーション
-                form.addEventListener('submit', event => {
-                    if (!form.checkValidity()) {
-                        event.preventDefault();
-                        event.stopPropagation();
-                    }
-                    form.classList.add('was-validated');
-                });
-
-                // 入力フィールドのフォーカス効果
-                const inputs = form.querySelectorAll('.form-control, .form-select');
-                inputs.forEach(input => {
-                    input.addEventListener('focus', () => {
-                        input.closest('.form-floating, .form-group')?.classList.add('is-focused');
-                    });
-
-                    input.addEventListener('blur', () => {
-                        input.closest('.form-floating, .form-group')?.classList.remove('is-focused');
-                    });
-                });
-            });
-
-            // Datepickerの初期化（flatpickrがある場合）
-            if (typeof flatpickr === 'function') {
-                flatpickr('.datepicker', {
-                    dateFormat: 'Y-m-d',
-                    locale: 'ja',
-                    allowInput: true,
-                    disableMobile: true
-                });
-            }
-        });
-    })();
-</script>

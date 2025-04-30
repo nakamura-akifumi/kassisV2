@@ -32,15 +32,19 @@ final class Version20250406135720 extends AbstractMigration
                               buyer VARCHAR(255), 
                               buyer_identifier LONGTEXT, 
                               purchase_date DATE DEFAULT NULL,
+                              record_source LONGTEXT DEFAULT NULL,
                               type1 VARCHAR(255) NULL,
                               type2 VARCHAR(255) DEFAULT NULL,
                               type3 VARCHAR(255) DEFAULT NULL,
                               type4 VARCHAR(255) DEFAULT NULL,
                               location1 VARCHAR(255) DEFAULT NULL,
                               location2 VARCHAR(255) DEFAULT NULL,
+                              contributor1 VARCHAR(255) DEFAULT NULL,
+                              contributor2 VARCHAR(255) DEFAULT NULL,
                               created_at DATETIME NOT NULL,
                               updated_at DATETIME NOT NULL,
-                              PRIMARY KEY(id)) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci ENGINE = InnoDB
+                              PRIMARY KEY(id)) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci ENGINE = InnoDB;
+            ALTER TABLE manifestation ADD CONSTRAINT unique_identifier UNIQUE (identifier);
         SQL);
     }
 
