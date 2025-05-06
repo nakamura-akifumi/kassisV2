@@ -26,3 +26,14 @@ services:
         arguments:
             $httpClient: '@http_client'
             $logger: '@logger'
+            
+    App\Service\AmazonImportService:
+        arguments:
+            $entityManager: '@doctrine.orm.entity_manager'
+            $slugger: '@Symfony\Component\String\Slugger\SluggerInterface'
+            $logger: '@logger'
+            $projectDir: '%kernel.project_dir%'
+            
+    App\Controller\AmazonImportController:
+        arguments:
+            $logger: '@logger'

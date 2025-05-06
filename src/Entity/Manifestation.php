@@ -74,13 +74,23 @@ class Manifestation
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $contributor2 = null;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $release_date_string = null;
+
+    #[ORM\Column(type: Types::DECIMAL, precision: 11, scale: 2, nullable: true)]
+    private ?string $price = null;
+
+    #[ORM\Column(length: 16)]
+    private string $status1 = 'active';
+
+    #[ORM\Column(length: 16, nullable: true)]
+    private ?string $status2 = null;
+
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
     private ?\DateTimeInterface $created_at = null;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
     private ?\DateTimeInterface $updated_at = null;
-
-    // 以下にゲッターとセッターを追加
 
     public function getId(): ?int
     {
@@ -296,6 +306,59 @@ class Manifestation
         return $this;
     }
 
+    public function getReleaseDateString(): ?string
+    {
+        return $this->release_date_string;
+    }
+
+    public function setReleaseDateString(?string $release_date_string): static
+    {
+        $this->release_date_string = $release_date_string;
+        return $this;
+    }
+
+    public function getFormattedPrice(): ?string
+    {
+        if ($this->price === null) {
+            return null;
+        }
+
+        return number_format($this->price, 0, '.', ',') . '円';
+    }
+
+    public function getPrice(): ?string
+    {
+        return $this->price;
+    }
+
+    public function setPrice(?string $price): static
+    {
+        $this->price = $price;
+        return $this;
+    }
+
+    public function getStatus1(): string
+    {
+        return $this->status1;
+    }
+
+    public function setStatus1(string $status1): static
+    {
+        $this->status1 = $status1;
+        return $this;
+    }
+
+    public function getStatus2(): ?string
+    {
+        return $this->status2;
+    }
+
+    public function setStatus2(?string $status2): static
+    {
+        $this->status2 = $status2;
+        return $this;
+    }
+
     public function getCreatedAt(): ?\DateTimeInterface
     {
         return $this->created_at;
@@ -323,6 +386,11 @@ class Manifestation
     {
         $this->created_at = new \DateTime();
         $this->updated_at = new \DateTime();
+        
+        // status1のデフォルト値を設定
+        if (empty($this->status1)) {
+            $this->status1 = 'active';
+        }
     }
 
     #[ORM\PreUpdate]
@@ -330,4 +398,17 @@ class Manifestation
     {
         $this->updated_at = new \DateTime();
     }
+
+    public function getAmazonUrl(): ?string
+    {
+        // externalIdentifier1がASINとして使われていると仮定
+        if (empty($this->getExternalIdentifier1())) {
+            return null;
+        }
+
+        // AmazonのドメインはbuderのJapanかどうかによって変わる可能性があるため、
+        // 日本のAmazonドメインをデフォルトとして使用
+        return 'https://www.amazon.co.jp/dp/' . $this->getExternalIdentifier1();
+    }
+
 }

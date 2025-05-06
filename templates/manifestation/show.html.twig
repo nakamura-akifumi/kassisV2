@@ -102,13 +102,56 @@
             text-align: center;
             border-radius: 4px;
         }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: white;
+            background-color: #6c757d;
+            margin-right: 0.5rem;
+        }
+        
+        .status-active {
+            background-color: #28a745;
+        }
+        
+        .status-inactive {
+            background-color: #6c757d;
+        }
+        
+        .status-pending {
+            background-color: #ffc107;
+            color: #212529;
+        }
+        
+        .status-deleted {
+            background-color: #dc3545;
+        }
+        
+        .status-sold {
+            background-color: #17a2b8;
+        }
+        
+        .status-loaned {
+            background-color: #6f42c1;
+        }
+        
+        .price-info {
+            font-weight: 600;
+            color: #e74c3c;
+        }
     </style>
 {% endblock %}
 
 {% block body %}
     <div class="container">
         <div class="manifestation-detail p-4">
-            <h1 class="manifestation-title">{{ manifestation.title }}</h1>
+            <h1 class="manifestation-title">
+                {{ manifestation.title }}
+            </h1>
 
             <div class="row">
                 <div class="col-md-8">
@@ -159,6 +202,21 @@
                             <td>{{ manifestation.purchaseDate ? manifestation.purchaseDate|date('Y-m-d') : '' }}</td>
                         </tr>
                         <tr>
+                            <th>発売日</th>
+                            <td>{{ manifestation.releaseDateString }}</td>
+                        </tr>
+                        <tr>
+                            <th>価格</th>
+                            <td class="price-info">{{ manifestation.formattedPrice }}</td>
+                        </tr>
+                        <tr>
+                            <th>ステータス</th>
+                            <td>
+                                {{ manifestation.status1 }}
+                                {{ manifestation.status2 }}
+                            </td>
+                        </tr>
+                        <tr>
                             <th>タイプ1</th>
                             <td>{{ manifestation.type1 }}</td>
                         </tr>
@@ -182,6 +240,22 @@
                             <th>場所2</th>
                             <td>{{ manifestation.location2 }}</td>
                         </tr>
+                        <tr>
+                            <th>著者/アーティスト</th>
+                            <td>{{ manifestation.contributor1 }}</td>
+                        </tr>
+                        <tr>
+                            <th>出版社/レーベル</th>
+                            <td>{{ manifestation.contributor2 }}</td>
+                        </tr>
+                        <tr>
+                            <th>情報源</th>
+                            <td>{{ manifestation.recordSource }}</td>
+                        </tr>
+                        <tr>
+                            <th>最終更新日</th>
+                            <td>{{ manifestation.updatedAt ? manifestation.updatedAt|date('Y-m-d H:i:s') : '' }}</td>
+                        </tr>
                         </tbody>
                     </table>
 
@@ -192,6 +266,11 @@
                         <a href="{{ path('app_manifestation_edit', {'id': manifestation.id}) }}" class="btn btn-primary">
                             <i class="fas fa-edit"></i> 編集
                         </a>
+                        {% if manifestation.amazonUrl %}
+                            <a href="{{ manifestation.amazonUrl }}" target="_blank" class="btn btn-warning">
+                                <i class="fab fa-amazon"></i> Amazonで見る
+                            </a>
+                        {% endif %}
                         {{ include('manifestation/_delete_form.html.twig') }}
                     </div>
                 </div>
@@ -203,8 +282,25 @@
                             <div class="cover-fallback d-none" id="coverFallback">
                                 <p>書影が見つかりませんでした</p>
                             </div>
-                            <img id="bookCover" class="d-none" alt="{{ manifestation.title }}の書影">                        </div>
+                            <img id="bookCover" class="d-none" alt="{{ manifestation.title }}の書影">
+                        </div>
                         <p class="text-muted small mt-2">ISBN: {{ manifestation.externalIdentifier1 }}</p>
+                        
+                        {% if manifestation.price or manifestation.releaseDateString %}
+                            <div class="card mt-3 w-100">
+                                <div class="card-body">
+                                    {% if manifestation.price %}
+                                        <p class="mb-1"><strong>価格:</strong> <span class="price-info">{{ manifestation.formattedPrice }}</span></p>
+                                    {% endif %}
+                                    {% if manifestation.releaseDateString %}
+                                        <p class="mb-1"><strong>発売日:</strong> {{ manifestation.releaseDateString }}</p>
+                                    {% endif %}
+                                    {% if manifestation.getLocationInfo %}
+                                        <p class="mb-1"><strong>所在:</strong> {{ manifestation.getLocationInfo }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>

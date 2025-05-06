@@ -41,6 +41,10 @@ final class Version20250406135720 extends AbstractMigration
                               location2 VARCHAR(255) DEFAULT NULL,
                               contributor1 VARCHAR(255) DEFAULT NULL,
                               contributor2 VARCHAR(255) DEFAULT NULL,
+                              release_date_string VARCHAR(255) DEFAULT NULL,
+                              price DECIMAL(11,2) DEFAULT NULL,
+                              status1 VARCHAR(16) NOT NULL,
+                              status2 VARCHAR(16) DEFAULT NULL,
                               created_at DATETIME NOT NULL,
                               updated_at DATETIME NOT NULL,
                               PRIMARY KEY(id)) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci ENGINE = InnoDB;
