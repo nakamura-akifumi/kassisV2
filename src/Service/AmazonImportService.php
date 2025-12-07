@@ -280,9 +280,9 @@ class AmazonImportService
                 $identifier = null;
                 $externalIdentifier1 = null;
                 if ($asinIndex !== false && !empty($data[$asinIndex])) {
-                    $identifier = $data[$asinIndex];
                     //TODO: 適切な文字列の生成
                     //$identifier = 'AMZ-' . substr($this->slugger->slug($title), 0, 50);
+                    $identifier = $data[$asinIndex];
                     $externalIdentifier1 = $data[$asinIndex];
                 }
 
@@ -322,6 +322,8 @@ class AmazonImportService
                 $manifestation->setBuyer($buyer);
                 $manifestation->setRecordSource('Amazon購入履歴:'.$csvFilesWithoutPath);
                 $manifestation->setExternalIdentifier1($externalIdentifier1);
+
+
 
                 if ($purchaseDate) {
                     $manifestation->setPurchaseDate($purchaseDate);
