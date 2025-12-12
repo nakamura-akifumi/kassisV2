@@ -17,6 +17,9 @@ npm init playwright@latest
 npx playwright test 
 
 
+簡易Webサーバで起動する
+symfony server:start -d --allow-all-ip
+
 ページを追加する
 https://symfony.com/doc/current/page_creation.html
 

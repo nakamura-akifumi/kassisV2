@@ -53,7 +53,7 @@ class NdlImportController extends AbstractController
             }
         }
         
-        return $this->render('manifestation/import_isbn.html.twig', [
+        return $this->render('import/isbn.html.twig', [
             'form' => $form->createView(),
             'error' => $error,
         ]);
