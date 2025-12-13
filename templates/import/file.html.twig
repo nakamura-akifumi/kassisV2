@@ -1,0 +1,74 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}ファイルインポート{% endblock %}
+
+{% block body %}
+    <div class="container py-2">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-primary text-white py-1">
+                <h2 class="mb-0 fs-5 lh-1">ファイルインポート（Excel / CSV）</h2>
+            </div>
+
+            <div class="card-body p-3">
+                <div class="alert alert-info small">
+                    <p class="mb-0">「/file/export」で出力できるフォーマット（ID/タイトル/著者/出版社/出版年/ISBN）のファイルをアップロードしてください。</p>
+                </div>
+
+                {{ form_start(form, {'attr': {'class': 'needs-validation'}}) }}
+                <div class="mb-3">
+                    {{ form_label(form.uploadFile, null, {'label_attr': {'class': 'form-label small mb-0 fw-bold'}}) }}
+                    {{ form_widget(form.uploadFile) }}
+                    {{ form_help(form.uploadFile) }}
+                    <div class="form-text text-danger small">
+                        {{ form_errors(form.uploadFile) }}
+                    </div>
+                </div>
+
+                <div class="d-grid gap-2 d-md-flex justify-content-md-start">
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        インポート開始
+                    </button>
+                    <a href="{{ path('app_manifestation_index') }}" class="btn btn-outline-secondary btn-sm">
+                        一覧に戻る
+                    </a>
+                </div>
+                {{ form_end(form) }}
+
+                {% if result is not null %}
+                    <div class="card mt-3">
+                        <div class="card-header bg-light py-1">
+                            <h3 class="card-title h6 mb-0">処理結果</h3>
+                        </div>
+                        <div class="card-body py-2">
+                            <ul class="list-group list-group-flush small">
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    正常にインポートされた件数
+                                    <span class="badge bg-success rounded-pill">{{ result.success }}</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    スキップされた件数
+                                    <span class="badge bg-warning rounded-pill">{{ result.skipped }}</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    エラーが発生した件数
+                                    <span class="badge bg-danger rounded-pill">{{ result.errors }}</span>
+                                </li>
+                            </ul>
+
+                            {% if result.errorMessages is defined and result.errorMessages|length > 0 %}
+                                <div class="alert alert-danger mt-2 py-2 small">
+                                    <strong>エラー内容:</strong>
+                                    <ul class="mb-0 mt-1">
+                                        {% for message in result.errorMessages %}
+                                            <li>{{ message }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endblock %}

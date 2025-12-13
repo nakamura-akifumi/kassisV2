@@ -25,19 +25,19 @@ class ManifestationRepository extends ServiceEntityRepository
         
         if ($author) {
             $queryBuilder
-                ->andWhere('m.author LIKE :author')
+                ->andWhere('m.contributor1 LIKE :author')
                 ->setParameter('author', '%' . $author . '%');
         }
-        
+
         if ($publisher) {
             $queryBuilder
-                ->andWhere('m.publisher LIKE :publisher')
+                ->andWhere('m.contributor2 LIKE :publisher')
                 ->setParameter('publisher', '%' . $publisher . '%');
         }
-        
+
         if ($isbn) {
             $queryBuilder
-                ->andWhere('m.isbn LIKE :isbn')
+                ->andWhere('m.external_identifier1 LIKE :isbn')
                 ->setParameter('isbn', '%' . $isbn . '%');
         }
         

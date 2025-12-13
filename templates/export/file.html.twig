@@ -1,0 +1,48 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}ファイルエクスポート{% endblock %}
+
+{% block body %}
+    <div class="container py-2">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-primary text-white py-1">
+                <h2 class="mb-0 fs-5 lh-1">ファイルエクスポート（Excel / CSV）</h2>
+            </div>
+
+            <div class="card-body p-3">
+                <div class="alert alert-info small">
+                    <p class="mb-0">エクスポート形式を選択して「エクスポート」ボタンを押してください。</p>
+                    <p class="mb-0 mt-1">（検索条件がURLに付いている場合、その条件でエクスポートします）</p>
+                </div>
+
+                {{ form_start(form, {'attr': {'class': 'needs-validation'}}) }}
+
+                {# 検索条件の引き継ぎ（GETパラメータをそのまま hidden で維持） #}
+                {% for key, value in query %}
+                    {% if value is not empty %}
+                        <input type="hidden" name="{{ key }}" value="{{ value }}">
+                    {% endif %}
+                {% endfor %}
+
+                <div class="mb-3">
+                    {{ form_label(form.format, null, {'label_attr': {'class': 'form-label small mb-2 fw-bold'}}) }}
+                    {{ form_widget(form.format) }}
+                    <div class="form-text text-danger small">
+                        {{ form_errors(form.format) }}
+                    </div>
+                </div>
+
+                <div class="d-grid gap-2 d-md-flex justify-content-md-start">
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        エクスポート
+                    </button>
+                    <a href="{{ path('app_manifestation_index') }}" class="btn btn-outline-secondary btn-sm">
+                        一覧に戻る
+                    </a>
+                </div>
+
+                {{ form_end(form) }}
+            </div>
+        </div>
+    </div>
+{% endblock %}
