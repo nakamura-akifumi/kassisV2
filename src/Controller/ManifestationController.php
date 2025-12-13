@@ -76,5 +76,63 @@ final class ManifestationController extends AbstractController
             'search_params' => $request->query->all(),
         ]);
     }
+
+    #[Route('/new', name: 'app_manifestation_new', methods: ['GET', 'POST'])]
+    public function new(Request $request, EntityManagerInterface $entityManager): Response
+    {
+        $manifestation = new Manifestation();
+        $form = $this->createForm(ManifestationType::class, $manifestation);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $entityManager->persist($manifestation);
+            $entityManager->flush();
+
+            return $this->redirectToRoute('app_manifestation_index', [], Response::HTTP_SEE_OTHER);
+        }
+
+        return $this->render('manifestation/new.html.twig', [
+            'manifestation' => $manifestation,
+            'form' => $form,
+        ]);
+    }
+
+    #[Route('/{id}', name: 'app_manifestation_show', methods: ['GET'])]
+    public function show(Manifestation $manifestation): Response
+    {
+        return $this->render('manifestation/show.html.twig', [
+            'manifestation' => $manifestation,
+        ]);
+    }
+
+    #[Route('/{id}/edit', name: 'app_manifestation_edit', methods: ['GET', 'POST'])]
+    public function edit(Request $request, Manifestation $manifestation, EntityManagerInterface $entityManager): Response
+    {
+        $form = $this->createForm(ManifestationType::class, $manifestation);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $entityManager->flush();
+
+            return $this->redirectToRoute('app_manifestation_index', [], Response::HTTP_SEE_OTHER);
+        }
+
+        return $this->render('manifestation/edit.html.twig', [
+            'manifestation' => $manifestation,
+            'form' => $form,
+        ]);
+    }
+
+    #[Route('/{id}', name: 'app_manifestation_delete', methods: ['POST'])]
+    public function delete(Request $request, Manifestation $manifestation, EntityManagerInterface $entityManager): Response
+    {
+        if ($this->isCsrfTokenValid('delete' . $manifestation->getId(), $request->getPayload()->getString('_token'))) {
+            $entityManager->remove($manifestation);
+            $entityManager->flush();
+        }
+
+        return $this->redirectToRoute('app_manifestation_index', [], Response::HTTP_SEE_OTHER);
+    }
+
 }
 

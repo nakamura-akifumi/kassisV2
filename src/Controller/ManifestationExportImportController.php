@@ -14,10 +14,9 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
-#[Route('/manifestation/excel')]
 class ManifestationExportImportController extends AbstractController
 {
-    #[Route('/export', name: 'app_manifestation_export', methods: ['GET'])]
+    #[Route('/file/export', name: 'app_manifestation_file_export', methods: ['GET'])]
     public function export(Request $request, ManifestationRepository $manifestationRepository): Response
     {
         // 検索条件の取得
@@ -59,10 +58,10 @@ class ManifestationExportImportController extends AbstractController
         foreach ($manifestations as $manifestation) {
             $sheet->setCellValue('A' . $row, $manifestation->getId());
             $sheet->setCellValue('B' . $row, $manifestation->getTitle());
-            $sheet->setCellValue('C' . $row, $manifestation->getAuthor());
-            $sheet->setCellValue('D' . $row, $manifestation->getPublisher());
-            $sheet->setCellValue('E' . $row, $manifestation->getPublicationYear());
-            $sheet->setCellValue('F' . $row, $manifestation->getIsbn());
+            $sheet->setCellValue('C' . $row, $manifestation->getContributor1());
+            $sheet->setCellValue('D' . $row, $manifestation->getContributor2());
+            $sheet->setCellValue('E' . $row, $manifestation->getReleaseDateString());
+            $sheet->setCellValue('F' . $row, $manifestation->getExternalIdentifier1());
             // 他のフィールドも追加
             $row++;
         }
@@ -94,60 +93,4 @@ class ManifestationExportImportController extends AbstractController
         return $this->file($temp_file, $fileName, ResponseHeaderBag::DISPOSITION_ATTACHMENT);
     }
 
-    #[Route('/new', name: 'app_manifestation_new', methods: ['GET', 'POST'])]
-    public function new(Request $request, EntityManagerInterface $entityManager): Response
-    {
-        $manifestation = new Manifestation();
-        $form = $this->createForm(ManifestationType::class, $manifestation);
-        $form->handleRequest($request);
-
-        if ($form->isSubmitted() && $form->isValid()) {
-            $entityManager->persist($manifestation);
-            $entityManager->flush();
-
-            return $this->redirectToRoute('app_manifestation_index', [], Response::HTTP_SEE_OTHER);
-        }
-
-        return $this->render('manifestation/new.html.twig', [
-            'manifestation' => $manifestation,
-            'form' => $form,
-        ]);
-    }
-
-    #[Route('/{id}', name: 'app_manifestation_show', methods: ['GET'])]
-    public function show(Manifestation $manifestation): Response
-    {
-        return $this->render('manifestation/show.html.twig', [
-            'manifestation' => $manifestation,
-        ]);
-    }
-
-    #[Route('/{id}/edit', name: 'app_manifestation_edit', methods: ['GET', 'POST'])]
-    public function edit(Request $request, Manifestation $manifestation, EntityManagerInterface $entityManager): Response
-    {
-        $form = $this->createForm(ManifestationType::class, $manifestation);
-        $form->handleRequest($request);
-
-        if ($form->isSubmitted() && $form->isValid()) {
-            $entityManager->flush();
-
-            return $this->redirectToRoute('app_manifestation_index', [], Response::HTTP_SEE_OTHER);
-        }
-
-        return $this->render('manifestation/edit.html.twig', [
-            'manifestation' => $manifestation,
-            'form' => $form,
-        ]);
-    }
-
-    #[Route('/{id}', name: 'app_manifestation_delete', methods: ['POST'])]
-    public function delete(Request $request, Manifestation $manifestation, EntityManagerInterface $entityManager): Response
-    {
-        if ($this->isCsrfTokenValid('delete' . $manifestation->getId(), $request->getPayload()->getString('_token'))) {
-            $entityManager->remove($manifestation);
-            $entityManager->flush();
-        }
-
-        return $this->redirectToRoute('app_manifestation_index', [], Response::HTTP_SEE_OTHER);
-    }
 }

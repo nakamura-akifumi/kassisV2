@@ -19,7 +19,7 @@ class AmazonImportController extends AbstractController
         $this->logger = $logger;
     }
 
-    #[Route('/import/amazon_orders', name: 'app_import_amazon_orders')]
+    #[Route('/file/import_amazon_orders', name: 'app_import_amazon_orders')]
     public function importAmazon(Request $request, AmazonImportService $amazonImportService): Response
     {
         $this->logger->info('Amazonインポート画面にアクセスがありました', [
