@@ -43,6 +43,19 @@
                     </div>
                 </div>
 
+                <div class="mb-3">
+                    <div class="form-check">
+                        {{ form_widget(form.onlyIsbnAsin) }}
+                        {{ form_label(form.onlyIsbnAsin, null, {'label_attr': {'class': 'form-check-label'}}) }}
+                    </div>
+                    <div class="form-text small">
+                        {{ form_help(form.onlyIsbnAsin) }}
+                    </div>
+                    <div class="form-text text-danger small">
+                        {{ form_errors(form.onlyIsbnAsin) }}
+                    </div>
+                </div>
+
                 <div class="d-grid gap-2 d-md-flex justify-content-md-start">
                     <button type="submit" class="btn btn-primary btn-sm">
                         <i class="fas fa-upload me-1"></i> インポート開始

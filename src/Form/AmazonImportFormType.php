@@ -3,6 +3,7 @@
 namespace App\Form;
 
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
 use Symfony\Component\Form\Extension\Core\Type\FileType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
@@ -33,6 +34,15 @@ class AmazonImportFormType extends AbstractType
                     'accept' => '.zip'
                 ],
                 'help' => 'Amazonからダウンロードしたご注文履歴ファイル（Your Orders.zip）をアップロードしてください'
+            ])
+            ->add('onlyIsbnAsin', CheckboxType::class, [
+                'label' => 'ASINがISBNとして妥当でない場合は取り込まない（ISBN-10/ISBN-13）',
+                'mapped' => false,
+                'required' => false,
+                'attr' => [
+                    'class' => 'form-check-input',
+                ],
+                'help' => 'ONにすると、ASINからISBNに変換できない行はスキップされます。',
             ])
         ;
     }

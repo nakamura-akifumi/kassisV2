@@ -28,7 +28,7 @@ class AmazonImportService
         $this->projectDir = $projectDir;
     }
 
-    public function processFile(UploadedFile $zipFile): array
+    public function processFile(UploadedFile $zipFile, bool $onlyIsbnAsin = false): array
     {
         $result = [
             'success' => 0,
@@ -39,7 +39,8 @@ class AmazonImportService
 
         $this->logger->info('Amazon購入履歴のインポートを開始します', [
             'filename' => $zipFile->getClientOriginalName(),
-            'size' => $zipFile->getSize()
+            'size' => $zipFile->getSize(),
+            'onlyIsbnAsin' => $onlyIsbnAsin,
         ]);
 
         // 一時ディレクトリを作成
@@ -82,7 +83,7 @@ class AmazonImportService
                         'skipped' => 0,
                         'errors' => 0,
                         'errorMessages' => []
-                    ]);
+                    ], $onlyIsbnAsin);
 
                     // 結果を集計する
                     $result['success'] += $fileResult['success'];
@@ -166,7 +167,7 @@ class AmazonImportService
     }
 
 
-    private function processAmazonCsv(string $csvPath, array $result): array
+    private function processAmazonCsv(string $csvPath, array $result, bool $onlyIsbnAsin): array
     {
         $handle = fopen($csvPath, 'rb');
         if ($handle === false) {
@@ -281,8 +282,6 @@ class AmazonImportService
                 $identifier = null;
                 $externalIdentifier3 = null;
                 if ($asinIndex !== false && !empty($data[$asinIndex])) {
-                    //TODO: 適切な文字列の生成
-                    //$identifier = 'AMZ-' . substr($this->slugger->slug($title), 0, 50);
                     $identifier = $data[$asinIndex];
                     $externalIdentifier3 = $data[$asinIndex];
                 }
@@ -328,6 +327,16 @@ class AmazonImportService
                     }
                 }
 
+                if ($onlyIsbnAsin && $externalIdentifier1 === null) {
+                    $this->logger->debug('ASINがISBNとして妥当ではないためスキップします', [
+                        'row' => $rowCount,
+                        'asin' => $externalIdentifier3,
+                        'file' => $csvFilesWithoutPath,
+                    ]);
+                    $result['skipped']++;
+                    continue;
+                }
+
                 // 同じIdentifierが存在するか確認
                 $existingItemByIdentifier = $this->entityManager->getRepository(Manifestation::class)
                     ->findOneBy(['identifier' => $identifier]);
@@ -365,8 +374,6 @@ class AmazonImportService
                 $manifestation->setRecordSource('Amazon購入履歴:'.$csvFilesWithoutPath);
                 $manifestation->setExternalIdentifier1($externalIdentifier1);
                 $manifestation->setExternalIdentifier3($externalIdentifier3);
-
-
 
                 if ($purchaseDate) {
                     $manifestation->setPurchaseDate($purchaseDate);
