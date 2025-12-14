@@ -401,14 +401,14 @@ class Manifestation
 
     public function getAmazonUrl(): ?string
     {
-        // externalIdentifier1がASINとして使われていると仮定
-        if (empty($this->getExternalIdentifier1())) {
+        // externalIdentifier3がASINとして使われていると仮定
+        if (empty($this->getExternalIdentifier3())) {
             return null;
         }
 
         // AmazonのドメインはbuderのJapanかどうかによって変わる可能性があるため、
         // 日本のAmazonドメインをデフォルトとして使用
-        return 'https://www.amazon.co.jp/dp/' . $this->getExternalIdentifier1();
+        return 'https://www.amazon.co.jp/dp/' . $this->getExternalIdentifier3();
     }
 
 }

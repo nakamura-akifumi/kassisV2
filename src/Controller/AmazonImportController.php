@@ -103,6 +103,11 @@ class AmazonImportController extends AbstractController
             $this->logger->warning('フォームバリデーションエラー', [
                 'errors' => $form->getErrors(true, true)
             ]);
+
+            $this->addFlash('danger', '入力内容にエラーがあります。内容を確認してください。');
+            foreach ($form->getErrors(true, true) as $error) {
+                $this->addFlash('danger', $error->getMessage());
+            }
         }
 
         return $this->render('import/amazon_orders.html.twig', [

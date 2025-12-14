@@ -24,6 +24,16 @@
                 </div>
 
                 {{ form_start(form, {'attr': {'class': 'needs-validation'}}) }}
+
+                {% if form.vars.submitted and not form.vars.valid %}
+                    <div class="alert alert-danger small py-2">
+                        入力内容にエラーがあります。赤字のメッセージをご確認ください。
+                        <div class="mt-1">
+                            {{ form_errors(form) }}
+                        </div>
+                    </div>
+                {% endif %}
+
                 <div class="mb-3">
                     {{ form_label(form.zipFile, null, {'label_attr': {'class': 'form-label small mb-0 fw-bold'}}) }}
                     {{ form_widget(form.zipFile) }}

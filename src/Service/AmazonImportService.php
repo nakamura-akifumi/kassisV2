@@ -7,6 +7,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\String\Slugger\SluggerInterface;
+use Symfony\Component\Uid\Uuid;
 
 class AmazonImportService
 {
@@ -42,9 +43,9 @@ class AmazonImportService
         ]);
 
         // 一時ディレクトリを作成
-        $tempDir = $this->projectDir . '/var/temp/' . uniqid('amazon_import_');
-        if (!is_dir($tempDir)) {
-            mkdir($tempDir, 0777, true);
+        $tempDir = $this->projectDir . '/var/temp/' . 'amazon_import_' . Uuid::v7()->toHex();
+        if (!is_dir($tempDir) && !mkdir($tempDir, 0777, true) && !is_dir($tempDir)) {
+            throw new \RuntimeException(sprintf('Directory "%s" was not created', $tempDir));
         }
 
         // ZIPファイルを一時ディレクトリに保存
@@ -52,7 +53,7 @@ class AmazonImportService
         $zipFile->move(dirname($zipPath), basename($zipPath));
         $this->logger->info('ZIPファイルをテンポラリディレクトリに保存しました', ['path' => $zipPath]);
 
-        $this->logger->info("tempDir=".$tempDir." zipPath=".$zipPath);;
+        $this->logger->info("tempDir=".$tempDir." zipPath=".$zipPath);
 
         try {
             // ZIPファイルを解凍
@@ -167,7 +168,7 @@ class AmazonImportService
 
     private function processAmazonCsv(string $csvPath, array $result): array
     {
-        $handle = fopen($csvPath, 'r');
+        $handle = fopen($csvPath, 'rb');
         if ($handle === false) {
             $this->logger->error('CSVファイルを開くことができませんでした', ['path' => $csvPath]);
             $result['errors']++;
@@ -265,7 +266,7 @@ class AmazonImportService
                     $result['skipped']++;
                     continue;
                 }
-                if ($title == 'Not Applicable') {
+                if ($title === 'Not Applicable') {
                     $this->logger->debug('タイトルが[Not Applicable]のため行をスキップします', ['row' => $rowCount]);
                     $result['skipped']++;
                     continue;
@@ -275,15 +276,56 @@ class AmazonImportService
                 if ($BuyerIndex !== false && !empty($data[$BuyerIndex])) {
                     $buyer = $data[$BuyerIndex];
                 }
-
+                
                 // ASIN
                 $identifier = null;
-                $externalIdentifier1 = null;
+                $externalIdentifier3 = null;
                 if ($asinIndex !== false && !empty($data[$asinIndex])) {
                     //TODO: 適切な文字列の生成
                     //$identifier = 'AMZ-' . substr($this->slugger->slug($title), 0, 50);
                     $identifier = $data[$asinIndex];
-                    $externalIdentifier1 = $data[$asinIndex];
+                    $externalIdentifier3 = $data[$asinIndex];
+                }
+
+                // ISBN
+                $externalIdentifier1 = null;
+                if ($externalIdentifier3 !== null) {
+                    // ISBNかどうかチェック (ISBN-10 または ISBN-13)
+                    $cleanIsbn = preg_replace('/[^0-9X]/i', '', $externalIdentifier3);
+                    $isValidIsbn = false;
+
+                    if (strlen($cleanIsbn) === 10) {
+                        // ISBN-10 チェック
+                        $sum = 0;
+                        for ($i = 0; $i < 9; $i++) {
+                            $sum += (int)$cleanIsbn[$i] * (10 - $i);
+                        }
+                        $checkDigit = $cleanIsbn[9];
+                        $sum += ($checkDigit === 'X' || $checkDigit === 'x') ? 10 : (int)$checkDigit;
+                        $isValidIsbn = ($sum % 11 === 0);
+                    } elseif (strlen($cleanIsbn) === 13) {
+                        // ISBN-13 チェック
+                        $sum = 0;
+                        for ($i = 0; $i < 12; $i++) {
+                            $sum += (int)$cleanIsbn[$i] * (($i % 2 === 0) ? 1 : 3);
+                        }
+                        $checkDigit = (10 - ($sum % 10)) % 10;
+                        $isValidIsbn = ((int)$cleanIsbn[12] === $checkDigit);
+                    }
+                    if ($isValidIsbn) {
+                        if (strlen($cleanIsbn) === 10) {
+                            // ISBN-10をISBN-13に変換
+                            $isbn13Base = '978' . substr($cleanIsbn, 0, 9);
+                            $sum = 0;
+                            for ($i = 0; $i < 12; $i++) {
+                                $sum += (int)$isbn13Base[$i] * (($i % 2 === 0) ? 1 : 3);
+                            }
+                            $checkDigit = (10 - ($sum % 10)) % 10;
+                            $externalIdentifier1 = $isbn13Base . $checkDigit;
+                        } else {
+                            $externalIdentifier1 = $externalIdentifier3;
+                        }
+                    }
                 }
 
                 // 同じIdentifierが存在するか確認
@@ -292,7 +334,7 @@ class AmazonImportService
 
                 if ($existingItemByIdentifier) {
                     $oldIdentifier = $identifier;
-                    $identifier = $data[$asinIndex]."-".uniqid('amz_');;
+                    $identifier = $data[$asinIndex]."-amz_".Uuid::v7()->toHex();
                     $this->logger->debug('同一識別子(identifier)が既に存在するため別の識別子に変更します', [
                         'identifier' => $oldIdentifier,
                         'new_identifier' => $identifier,
@@ -322,6 +364,7 @@ class AmazonImportService
                 $manifestation->setBuyer($buyer);
                 $manifestation->setRecordSource('Amazon購入履歴:'.$csvFilesWithoutPath);
                 $manifestation->setExternalIdentifier1($externalIdentifier1);
+                $manifestation->setExternalIdentifier3($externalIdentifier3);
 
 
 
@@ -368,7 +411,7 @@ class AmazonImportService
         if (is_dir($dir)) {
             $objects = scandir($dir);
             foreach ($objects as $object) {
-                if ($object != "." && $object != "..") {
+                if ($object !== "." && $object !== "..") {
                     if (is_dir($dir . "/" . $object)) {
                         $this->removeDirectory($dir . "/" . $object);
                     } else {
