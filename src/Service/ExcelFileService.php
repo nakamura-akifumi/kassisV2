@@ -5,8 +5,10 @@ namespace App\Service;
 use App\Entity\Manifestation;
 use Doctrine\ORM\EntityManagerInterface;
 use PhpOffice\PhpSpreadsheet\IOFactory;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
+use Throwable;
 
 class ExcelFileService
 {
@@ -52,7 +54,7 @@ class ExcelFileService
             }
 
             // データ行（2行目以降）
-            for ($i = 2; $i <= count($rows); $i++) {
+            for ($i = 2, $iMax = count($rows); $i <= $iMax; $i++) {
                 $row = $rows[$i] ?? null;
                 if ($row === null) {
                     continue;
@@ -109,7 +111,7 @@ class ExcelFileService
 
                     $this->entityManager->persist($manifestation);
                     $result['success']++;
-                } catch (\Throwable $e) {
+                } catch (Throwable $e) {
                     $this->logger->error('Import row failed', [
                         'row' => $i,
                         'error' => $e->getMessage(),
@@ -121,7 +123,7 @@ class ExcelFileService
 
             $this->entityManager->flush();
             return $result;
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $this->logger->error('Import failed', ['error' => $e->getMessage()]);
             $result['errors']++;
             $result['errorMessages'][] = 'ファイルの読み込みに失敗しました: ' . $e->getMessage();
@@ -129,10 +131,10 @@ class ExcelFileService
         }
     }
 
-    private function loadSpreadsheet(UploadedFile $file)
+    private function loadSpreadsheet(UploadedFile $file): Spreadsheet
     {
         $path = $file->getPathname();
-        $ext = strtolower((string) $file->getClientOriginalExtension());
+        $ext = strtolower($file->getClientOriginalExtension());
 
         if ($ext === 'csv') {
             $reader = IOFactory::createReader('Csv');
