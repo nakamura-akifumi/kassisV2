@@ -4,7 +4,7 @@ kassisV2 は、書籍などを管理するアプリです。
 
 ## できること
 
-- ISBNからの取り込み
+- ISBNからの取り込み(国立国会図書館サーチ APIからの取得 https://ndlsearch.ndl.go.jp/api/opensearch)
 - Amazonの購入履歴ファイル(Your Orders.zip)からの取り込み
 - CSVまたはエクセル形式でのインポート
 - CSVまたはエクセル形式でのエクスポート
@@ -165,6 +165,4 @@ with Zend OPcache v8.4.15, Copyright (c), by Zend Technologies
 with Xdebug v3.5.0, Copyright (c) 2002-2025, by Derick Rethans
 
 Xdebug と表示されているので有効化された。
-
-
 

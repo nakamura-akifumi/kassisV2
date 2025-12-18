@@ -48,7 +48,6 @@ class NdlImportServiceTest extends KernelTestCase
 
     public function testImportByIsbnReturnsBook(): void
     {
-        $isbn = '9784003230817';
 
         $httpClient = static::getContainer()->get(HttpClientInterface::class);
         $logger = static::getContainer()->get(LoggerInterface::class);
@@ -56,8 +55,65 @@ class NdlImportServiceTest extends KernelTestCase
         $ndlSearchService = new NdlSearchService($httpClient, $logger);
         $service = new NdlImportService($ndlSearchService, $this->entityManager);
 
+        $isbn = '9784003230817';
         $manifestation = $service->importByIsbn($isbn);
 
         self::assertNotNull($manifestation);
+        self::assertSame("白鯨. 上", $manifestation->getTitle());
+        self::assertSame("ハクゲイ", $manifestation->getTitleTranscription());
+        self::assertSame("4-00-323081-7", $manifestation->getIdentifier());
+        self::assertSame("9784003230817", $manifestation->getExternalIdentifier1());
+        self::assertSame("https://ndlsearch.ndl.go.jp/books/R100000002-I000007478705", $manifestation->getRecordSource());
+        self::assertSame("図書", $manifestation->getType1());
+        self::assertSame("Melville, Herman, 1819-1891,八木, 敏雄, 1930-2012,メルヴィル 作,八木敏雄 訳", $manifestation->getContributor1());
+        self::assertSame("岩波書店", $manifestation->getContributor2());
+        self::assertSame("2004.8", $manifestation->getReleaseDateString());
+
+        $isbn = '9784140811016';
+        $manifestation = $service->importByIsbn($isbn);
+        self::assertNotNull($manifestation);
+        self::assertSame("人類が知っていることすべての短い歴史", $manifestation->getTitle());
+        self::assertSame("ジンルイ ガ シッテイル コト スベテ ノ ミジカイ レキシ", $manifestation->getTitleTranscription());
+        self::assertSame("4-14-081101-3", $manifestation->getIdentifier());
+        self::assertSame("9784140811016", $manifestation->getExternalIdentifier1());
+        self::assertSame("https://ndlsearch.ndl.go.jp/books/R100000002-I000008142306", $manifestation->getRecordSource());
+        self::assertSame("図書", $manifestation->getType1());
+        self::assertSame("Bryson, Bill, 1951-,楡井, 浩一, 1951-2014,ビル・ブライソン 著,楡井浩一 訳", $manifestation->getContributor1());
+        self::assertSame("日本放送出版協会", $manifestation->getContributor2());
+        self::assertSame("2006.3", $manifestation->getReleaseDateString());
+
+        $isbn = '9784805455425';
+        $manifestation = $service->importByIsbn($isbn);
+
+        self::assertNotNull($manifestation);
+        self::assertSame("うみまでいけるかな?", $manifestation->getTitle());
+        self::assertSame("ウミ マデ イケル カナ", $manifestation->getTitleTranscription());
+        self::assertSame("978-4-8054-5542-5", $manifestation->getIdentifier());
+        self::assertSame("9784805455425", $manifestation->getExternalIdentifier1());
+        self::assertSame("https://ndlsearch.ndl.go.jp/books/R100000002-I032849113", $manifestation->getRecordSource());
+        self::assertSame("図書", $manifestation->getType1());
+        self::assertSame("新井, 洋行, 1974-,小林, 潔子, 1977-,新井洋行 さく,小林ゆき子 え", $manifestation->getContributor1());
+        self::assertSame("チャイルド本社", $manifestation->getContributor2());
+        self::assertSame("2023.7", $manifestation->getReleaseDateString());
+
+
+    }
+
+    public function testImportByIsbnReturnsNull(): void
+    {
+        $httpClient = static::getContainer()->get(HttpClientInterface::class);
+        $logger = static::getContainer()->get(LoggerInterface::class);
+
+        $ndlSearchService = new NdlSearchService($httpClient, $logger);
+        $service = new NdlImportService($ndlSearchService, $this->entityManager);
+
+        $isbn = ''; // 空文字
+        $manifestation = $service->importByIsbn($isbn);
+
+        self::assertNull($manifestation);
+
+        $isbn = '978414081101X'; // 不正なISBN
+        $manifestation = $service->importByIsbn($isbn);
+        self::assertNull($manifestation);
     }
 }
