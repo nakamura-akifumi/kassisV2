@@ -133,6 +133,4 @@ final class ManifestationController extends AbstractController
 
         return $this->redirectToRoute('app_manifestation_index', [], Response::HTTP_SEE_OTHER);
     }
-
 }
-

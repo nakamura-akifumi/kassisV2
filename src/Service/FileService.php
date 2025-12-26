@@ -24,80 +24,88 @@ class FileService
      * Manifestation のリストからエクスポートファイルを生成し、一時ファイルのパスを返す。
      *
      * @param Manifestation[] $manifestations
+     * @param string[] $columns 選択された項目キーの配列
      */
-    public function generateExportFile(array $manifestations, string $format): string
+    public function generateExportFile(array $manifestations, string $format, array $columns = []): string
     {
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
 
-        // ヘッダー設定
-        $sheet->setCellValue('A1', 'ID');
-        $sheet->setCellValue('B1', 'タイトル');
-        $sheet->setCellValue('C1', 'ヨミ');
-        $sheet->setCellValue('D1', '識別子');
-        $sheet->setCellValue('E1', '外部識別子１');
-        $sheet->setCellValue('F1', '外部識別子２');
-        $sheet->setCellValue('G1', '外部識別子３');
-        $sheet->setCellValue('H1', '説明');
-        $sheet->setCellValue('I1', '購入先');
-        $sheet->setCellValue('J1', '購入先識別子');
-        $sheet->setCellValue('K1', '購入日');
-        $sheet->setCellValue('L1', '情報取得元');
-        $sheet->setCellValue('M1', '分類１');
-        $sheet->setCellValue('N1', '分類２');
-        $sheet->setCellValue('O1', '分類３');
-        $sheet->setCellValue('P1', '分類４');
-        $sheet->setCellValue('Q1', '場所１');
-        $sheet->setCellValue('R1', '場所２');
-        $sheet->setCellValue('S1', '貢献者１');
-        $sheet->setCellValue('T1', '貢献者２');
-        $sheet->setCellValue('U1', 'ステータス１');
-        $sheet->setCellValue('V1', 'ステータス２');
-        $sheet->setCellValue('W1', '発売日');
-        $sheet->setCellValue('X1', '金額');
-        $sheet->setCellValue('Y1', '作成日時');
-        $sheet->setCellValue('Z1', '更新日時');
+        // 項目定義とラベルのマッピング
+        $allColumns = [
+            'id' => ['label' => 'ID', 'getter' => 'getId'],
+            'title' => ['label' => 'タイトル', 'getter' => 'getTitle'],
+            'titleTranscription' => ['label' => 'ヨミ', 'getter' => 'getTitleTranscription'],
+            'identifier' => ['label' => '識別子', 'getter' => 'getIdentifier'],
+            'externalIdentifier1' => ['label' => '外部識別子１', 'getter' => 'getExternalIdentifier1'],
+            'externalIdentifier2' => ['label' => '外部識別子２', 'getter' => 'getExternalIdentifier2'],
+            'externalIdentifier3' => ['label' => '外部識別子３', 'getter' => 'getExternalIdentifier3'],
+            'description' => ['label' => '説明', 'getter' => 'getDescription'],
+            'buyer' => ['label' => '購入先', 'getter' => 'getBuyer'],
+            'buyerIdentifier' => ['label' => '購入先識別子', 'getter' => 'getBuyerIdentifier'],
+            'purchaseDate' => ['label' => '購入日', 'getter' => 'getPurchaseDate'],
+            'recordSource' => ['label' => '情報取得元', 'getter' => 'getRecordSource'],
+            'type1' => ['label' => '分類１', 'getter' => 'getType1'],
+            'type2' => ['label' => '分類２', 'getter' => 'getType2'],
+            'type3' => ['label' => '分類３', 'getter' => 'getType3'],
+            'type4' => ['label' => '分類４', 'getter' => 'getType4'],
+            'location1' => ['label' => '場所１', 'getter' => 'getLocation1'],
+            'location2' => ['label' => '場所２', 'getter' => 'getLocation2'],
+            'contributor1' => ['label' => '貢献者１', 'getter' => 'getContributor1'],
+            'contributor2' => ['label' => '貢献者２', 'getter' => 'getContributor2'],
+            'status1' => ['label' => 'ステータス１', 'getter' => 'getStatus1'],
+            'status2' => ['label' => 'ステータス２', 'getter' => 'getStatus2'],
+            'releaseDateString' => ['label' => '発売日', 'getter' => 'getReleaseDateString'],
+            'price' => ['label' => '金額', 'getter' => 'getPrice'],
+            'createdAt' => ['label' => '作成日時', 'getter' => 'getCreatedAt'],
+            'updatedAt' => ['label' => '更新日時', 'getter' => 'getUpdatedAt'],
+        ];
 
-        // データ行
+        // 必須項目をマージし、順序を維持
+        $required = ['id', 'title', 'identifier'];
+        $selectedColumns = array_unique(array_merge($required, $columns));
+
+        // ヘッダー行の書き込み
+        $colIndex = 1;
+        foreach ($selectedColumns as $key) {
+            if (isset($allColumns[$key])) {
+                $sheet->setCellValue([$colIndex, 1], $allColumns[$key]['label']);
+                $colIndex++;
+            }
+        }
+
+        // データ行の書き込み
         $row = 2;
         foreach ($manifestations as $manifestation) {
-            $sheet->setCellValue('A' . $row, $manifestation->getId());
-            $sheet->setCellValue('B' . $row, $manifestation->getTitle());
-            $sheet->setCellValue('C' . $row, $manifestation->getTitleTranscription());
-            $sheet->setCellValue('D' . $row, $manifestation->getIdentifier());
-            $sheet->setCellValue('E' . $row, $manifestation->getExternalIdentifier1());
-            $sheet->setCellValue('F' . $row, $manifestation->getExternalIdentifier2());
-            $sheet->setCellValue('G' . $row, $manifestation->getExternalIdentifier3());
-            $sheet->setCellValue('H' . $row, $manifestation->getDescription());
-            $sheet->setCellValue('I' . $row, $manifestation->getBuyer());
-            $sheet->setCellValue('J' . $row, $manifestation->getBuyerIdentifier());
-            $sheet->setCellValue('K' . $row, $manifestation->getPurchaseDate());
-            $sheet->setCellValue('L' . $row, $manifestation->getRecordSource());
-            $sheet->setCellValue('M' . $row, $manifestation->getType1());
-            $sheet->setCellValue('N' . $row, $manifestation->getType2());
-            $sheet->setCellValue('O' . $row, $manifestation->getType3());
-            $sheet->setCellValue('P' . $row, $manifestation->getType4());
-            $sheet->setCellValue('Q' . $row, $manifestation->getLocation1());
-            $sheet->setCellValue('R' . $row, $manifestation->getLocation2());
-            $sheet->setCellValue('S' . $row, $manifestation->getContributor1());
-            $sheet->setCellValue('T' . $row, $manifestation->getContributor2());
-            $sheet->setCellValue('U' . $row, $manifestation->getStatus1());
-            $sheet->setCellValue('V' . $row, $manifestation->getStatus2());
-            $sheet->setCellValue('W' . $row, $manifestation->getReleaseDateString());
-            $sheet->setCellValue('X' . $row, $manifestation->getPrice());
-            $sheet->setCellValue('Y' . $row, $manifestation->getCreatedAt());
-            $sheet->setCellValue('Z' . $row, $manifestation->getUpdatedAt());
+            $colIndex = 1;
+            foreach ($selectedColumns as $key) {
+                if (isset($allColumns[$key])) {
+                    $getter = $allColumns[$key]['getter'];
+                    $value = $manifestation->$getter();
+                    
+                    // DateTime などのオブジェクト処理
+                    if ($value instanceof \DateTimeInterface) {
+                        $value = $value->format('Y-m-d H:i:s');
+                    }
+
+                    $sheet->setCellValue([$colIndex, $row], $value);
+                    $colIndex++;
+                }
+            }
             $row++;
         }
+
         // スタイル調整（xlsxのみ）
+        $lastColLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex(count($selectedColumns));
         if ($format === 'xlsx') {
-            $sheet->getStyle('A1:Z1')->getFont()->setBold(true);
-            $sheet->getStyle('A1:Z1')->getFill()
+            $sheet->getStyle("A1:{$lastColLetter}1")->getFont()->setBold(true);
+            $sheet->getStyle("A1:{$lastColLetter}1")->getFill()
                 ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
                 ->getStartColor()->setRGB('DDDDDD');
 
-            foreach (range('A', 'Z') as $col) {
-                $sheet->getColumnDimension($col)->setAutoSize(true);
+            for ($i = 1; $i <= count($selectedColumns); $i++) {
+                $colLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($i);
+                $sheet->getColumnDimension($colLetter)->setAutoSize(true);
             }
         }
 

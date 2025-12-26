@@ -83,22 +83,6 @@ npx playwright test
 symfony server:start --allow-all-ip
 symfony server:start -d --allow-all-ip
 
-ページを追加する
-https://symfony.com/doc/current/page_creation.html
-
-## Creating a Page: Route and Controller
-php bin/console make:controller
-
-## Create a route
-https://symfony.com/doc/current/routing.html
-
-コントローラーのアクションの上部に追加する。
-
-#[Route('/api/posts/{id}', methods: ['GET', 'HEAD'])]
-
-## ルーティングを確認する
-php bin/console debug:router
-
 ## テンプレートキャッシュをクリアする
 
 php bin/console cache:clear --no-warmup
@@ -109,60 +93,4 @@ php bin/console cache:warmup
 https://www.heidisql.com/download.php
 
 heidisql &
-
-# PHPでデバッグ
-
-「phpinfo」をブラウザで表示する。
-
-vi phpinfo.php
-```
-<?php
-phpinfo();
-?>
-```
-
-Xdebugのインストールページへアクセスする。
-https://xdebug.org/wizard
-
-さきのphpinfoの内容を全コピーしたものをテキストボックスに貼り付ける。
-画面下部の 「Analyze my phpinfo() output」をクリックする。
-
-結果が表示されるので、
-Instructions に記載のとおりに対応する。
-
-参考：Ubuntu 24.04 LTS + PHP 8.4 環境の場合
-〜〜〜
-apt-get install php8.4-dev autoconf automake
-
-xdebug* をダウンロードする。~/temp/phpdebug 等
-
-cd ~/temp/phpdebug
-tar -xvzf xdebug-3.5.0.tgz
-cd xdebug-3.5.0
-phpize
-./configure
-make
-sudo cp modules/xdebug.so /usr/lib/php/20240924/
-
-vi /etc/php/8.4/cli/conf.d/99-xdebug.ini
-~~~
-zend_extension=xdebug.so
-[xdebug]
-xdebug.mode=debug
-xdebug.start_with_request=yes
-xdebug.log=/tmp/xdebug.log
-xdebug.log_level=10
-xdebug.client_host=127.0.0.1
-xdebug.client_port=9003
-~~~q
-
-$ php --version
-PHP 8.4.15 (cli) (built: Nov 20 2025 17:43:25) (NTS)
-Copyright (c) The PHP Group
-Built by Debian
-Zend Engine v4.4.15, Copyright (c) Zend Technologies
-with Zend OPcache v8.4.15, Copyright (c), by Zend Technologies
-with Xdebug v3.5.0, Copyright (c) 2002-2025, by Derick Rethans
-
-Xdebug と表示されているので有効化された。
 

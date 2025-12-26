@@ -32,6 +32,37 @@
                     </div>
                 </div>
 
+                <div class="mb-4">
+                    <label class="form-label fw-bold">1. 出力項目を選択してください</label>
+                    <div class="row g-2">
+                        {% set fields = [
+                            'Id', 'Title', 'Transcription', 'Identifier', 'External_identifier1',
+                            'External_identifier2', 'External_identifier3', 'Description', 'Buyer',
+                            'Buyer_identifier', 'Purchase_date', 'RecordSource', 'Type1', 'Type2',
+                            'Type3', 'Type4', 'Location1', 'Location2', 'Contributor1', 'Contributor2',
+                            'Status1', 'Status2', 'ReleaseDateString', 'Price', 'CreatedAt', 'UpdatedAt'
+                        ] %}
+                        {% for field in fields %}
+                            {% set fieldKey = field|first|lower ~ field|slice(1) %}
+                            {% set isRequired = fieldKey in ['id', 'title', 'identifier'] %}
+                            <div class="col-md-3 col-sm-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="{{ form.columns.vars.full_name }}[]"
+                                               value="{{ fieldKey }}" id="col_{{ fieldKey }}"
+                                               {% if isRequired %}checked disabled{% else %}checked{% endif %}>
+                                    <label class="form-check-label" for="col_{{ fieldKey }}">
+                                        {{ ('Model.Manifestation.fields.' ~ field) | trans }}
+                                    </label>
+                                    {# disabledな要素は送信されないため、必須項目はhiddenで確実に送る #}
+                                    {% if isRequired %}
+                                        <input type="hidden" name="{{ form.columns.vars.full_name }}[]" value="{{ fieldKey }}">
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
                 <div class="d-grid gap-2 d-md-flex justify-content-md-start">
                     <button type="submit" class="btn btn-primary btn-sm">
                         エクスポート

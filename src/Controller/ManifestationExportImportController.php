@@ -6,6 +6,7 @@ use App\Form\ManifestationFileExportFormType;
 use App\Form\ManifestationFileImportFormType;
 use App\Repository\ManifestationRepository;
 use App\Service\FileService;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -14,6 +15,13 @@ use Symfony\Component\Routing\Attribute\Route;
 
 class ManifestationExportImportController extends AbstractController
 {
+    private $logger;
+
+    public function __construct(LoggerInterface $logger)
+    {
+        $this->logger = $logger;
+    }
+
     #[Route('/file/import', name: 'app_manifestation_file_import', methods: ['GET', 'POST'])]
     public function import(Request $request, FileService $fileService): Response
     {
@@ -60,6 +68,8 @@ class ManifestationExportImportController extends AbstractController
             ]);
         }
 
+        $this->logger->info('エクスポート処理を開始');
+        
         $format = (string) $form->get('format')->getData(); // xlsx|csv
 
         // 検索条件の取得（画面表示時は query、POST時も query の条件を引き継ぐ）
@@ -79,7 +89,11 @@ class ManifestationExportImportController extends AbstractController
             $manifestations = $manifestationRepository->findAll();
         }
 
-        $tempFile = $fileService->generateExportFile($manifestations, $format);
+        $columns = $form->get('columns')->getData();
+
+        $this->logger->info(var_export($columns, true));
+
+        $tempFile = $fileService->generateExportFile($manifestations, $format, $columns);
 
         $fileNameParts = ['manifestations'];
         if ($searchTitle) $fileNameParts[] = 'title-' . substr(preg_replace('/[^a-z0-9]/i', '', (string)$searchTitle), 0, 10);
