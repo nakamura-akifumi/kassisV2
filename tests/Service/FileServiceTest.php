@@ -22,16 +22,41 @@ class FileServiceTest extends TestCase
         $this->fileService = new FileService($this->entityManager, $this->logger);
     }
 
-    public function testGenerateExportFileXlsx(): void
+    public function testGenerateExportFileMinimumColumnXlsx(): void
     {
         // 準備
         $m = new Manifestation();
-        // IDはReflectionなどでセットするか、モックにする必要がありますが、
-        // EntityにgetId()があればそれを使います。
         $manifestations = [$this->createManifestationMock(1, 'テストタイトル', '著者A')];
 
         // 実行
         $filePath = $this->fileService->generateExportFile($manifestations, 'xlsx');
+
+        // 検証
+        $this->assertFileExists($filePath);
+        $spreadsheet = IOFactory::load($filePath);
+        $sheet = $spreadsheet->getActiveSheet();
+
+        $this->assertEquals('ID', $sheet->getCell('A1')->getValue());
+        $this->assertEquals('タイトル', $sheet->getCell('B1')->getValue());
+        $this->assertEquals('識別子', $sheet->getCell('C1')->getValue());
+
+        unlink($filePath); // 後片付け
+    }
+
+    public function testGenerateExportFileAllColumnXlsx(): void
+    {
+        // 準備
+        $m = new Manifestation();
+        $manifestations = [$this->createManifestationMock(1, 'テストタイトル', '著者A')];
+
+        $columns = ['id', 'title', 'titleTranscription', 'identifier', 'externalIdentifier1',
+            'externalIdentifier2', 'externalIdentifier3', 'description', 'buyer',
+            'buyerIdentifier', 'purchaseDate', 'recordSource', 'type1', 'type2',
+            'type3', 'type4', 'location1', 'location2', 'contributor1', 'contributor2',
+            'status1', 'status2', 'releaseDateString', 'price', 'createdAt', 'updatedAt'];
+
+        // 実行
+        $filePath = $this->fileService->generateExportFile($manifestations, 'xlsx', $columns);
 
         // 検証
         $this->assertFileExists($filePath);
@@ -70,7 +95,7 @@ class FileServiceTest extends TestCase
         unlink($filePath); // 後片付け
     }
 
-    public function testGenerateExportFileCsv(): void
+    public function testGenerateExportFileMinimumColumnCsv(): void
     {
         // 準備
         $manifestations = [$this->createManifestationMock(2, 'CSVタイトル', '著者B')];
@@ -81,11 +106,36 @@ class FileServiceTest extends TestCase
         // 検証
         $this->assertFileExists($filePath);
         $content = file_get_contents($filePath);
+
+        $this->assertStringContainsString('"ID","タイトル","識別子"', $content);
+        $this->assertStringContainsString('"2","CSVタイトル","IDENTIFIER"', $content);
+
+        unlink($filePath);
+    }
+
+    public function testGenerateExportFileAllColumnCsv(): void
+    {
+        // 準備
+        $manifestations = [$this->createManifestationMock(2, 'CSVタイトル', '著者B')];
+
+        // 実行
+        $columns = ['id', 'title', 'titleTranscription', 'identifier', 'externalIdentifier1',
+            'externalIdentifier2', 'externalIdentifier3', 'description', 'buyer',
+            'buyerIdentifier', 'purchaseDate', 'recordSource', 'type1', 'type2',
+            'type3', 'type4', 'location1', 'location2', 'contributor1', 'contributor2',
+            'status1', 'status2', 'releaseDateString', 'price', 'createdAt', 'updatedAt'];
+
+        $filePath = $this->fileService->generateExportFile($manifestations, 'csv', $columns);
+
+        // 検証
+        $this->assertFileExists($filePath);
+        $content = file_get_contents($filePath);
         // BOM(EF BB BF) + ヘッダー + データ
         $this->assertStringContainsString('"ID","タイトル","ヨミ","識別子","外部識別子１","外部識別子２","外部識別子３","説明","購入先","購入先識別子","購入日","情報取得元","分類１","分類２","分類３","分類４","場所１","場所２","貢献者１","貢献者２","ステータス１","ステータス２","発売日","金額","作成日時","更新日時"', $content);
         $this->assertStringContainsString('"2","CSVタイトル","タイトルヨミ","IDENTIFIER","1234567890X1","1234567890X2","1234567890X3","","購入元商店","BUYERIDENTIFIER","","https://shop.example.com/A/B/C/DEFGH","1234567890T1","1234567890T2","1234567890T3","1234567890T4","","","著者B","出版社X","STATUS1","STATUS2","2023","","2022-12-13 22:23:34","2022-12-14 11:23:34"', $content);
 
         unlink($filePath);
+
     }
 
     private function createManifestationMock(int $id, string $title, string $author): Manifestation

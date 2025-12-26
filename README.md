@@ -88,9 +88,3 @@ symfony server:start -d --allow-all-ip
 php bin/console cache:clear --no-warmup
 php bin/console cache:warmup
 
-## DBツール
-
-https://www.heidisql.com/download.php
-
-heidisql &
-

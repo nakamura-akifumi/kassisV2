@@ -61,10 +61,10 @@ class FileService
             'updatedAt' => ['label' => '更新日時', 'getter' => 'getUpdatedAt'],
         ];
 
-        // 必須項目をマージし、順序を維持
+        // 必須項目
         $required = ['id', 'title', 'identifier'];
-        $selectedColumns = array_unique(array_merge($required, $columns));
-
+        // 順番維持のため指示カラム列に必須列を追加する。
+        $selectedColumns = array_unique(array_merge($columns, $required));
         // ヘッダー行の書き込み
         $colIndex = 1;
         foreach ($selectedColumns as $key) {
@@ -119,7 +119,7 @@ class FileService
             $writer->setDelimiter(',');
             $writer->setEnclosure('"');
             $writer->setLineEnding("\n");
-            $writer->setUseBOM(true);
+            $writer->setUseBOM(false);
             $writer->save($tempFile);
         } else {
             $writer = new Xlsx($spreadsheet);
