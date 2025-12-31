@@ -27,7 +27,7 @@ class NdlImportService
             return null;
         }
 
-        $bookData = $this->ndlSearchService->searchByIsbn($isbn);
+        $bookData = $this->ndlSearchService->searchByIsbnSru($isbn);
         if ($bookData === null) {
             return null;
         }
