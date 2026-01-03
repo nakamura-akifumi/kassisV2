@@ -81,7 +81,7 @@ class FileServiceImportTest extends WebTestCase
         $this->assertSame("古川武彦, 大木勇人 著", $manifestation->getContributor1());
         $this->assertSame("講談社", $manifestation->getContributor2());
         $this->assertSame("2025/12/10", $manifestation->getPurchaseDate()->format('Y/m/d'));
-        $this->assertSame(1200, $manifestation->getPrice());
+        $this->assertSame("1200", $manifestation->getPrice());
         $this->assertSame("2023.7", $manifestation->getReleaseDateString());
         $this->assertSame("active", $manifestation->getStatus1());
 
@@ -102,7 +102,7 @@ class FileServiceImportTest extends WebTestCase
         $this->assertSame("書棚１", $manifestation->getLocation1());
         $this->assertSame("2023/12/31", $manifestation->getPurchaseDate()->format('Y/m/d'));
         $this->assertSame("active", $manifestation->getStatus1());
-        $this->assertSame(900, $manifestation->getPrice());
+        $this->assertSame("900", $manifestation->getPrice());
 
         // ファイル２ テストデータ1行目：全カラム確認
         $filePath = self::getContainer()->getParameter('kernel.project_dir') . '/tests/resources/importtest2.xlsx';
@@ -146,12 +146,31 @@ class FileServiceImportTest extends WebTestCase
         $this->assertEquals("new", $manifestation->getStatus1());
         $this->assertEquals("archive", $manifestation->getStatus2());
         $this->assertEquals("2025.1", $manifestation->getReleaseDateString());
-        $this->assertEquals(1700, $manifestation->getPrice());
+        $this->assertEquals("1700", $manifestation->getPrice());
 
         // ファイル３ テストデータ１行目：同じ識別子で上書き確認
+        $filePath = self::getContainer()->getParameter('kernel.project_dir') . '/tests/resources/importtest3.xlsx';
+
+        if (!file_exists($filePath)) {
+            $this->markTestSkipped('テスト用のExcelファイルが見つかりません: ' . $filePath);
+        }
+
+        $uploadedFile = new UploadedFile(
+            $filePath,
+            'importtest3.xlsx',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            null,
+            true
+        );
+
+        // インポート実行
+        $result = $this->fileService->importManifestationsFromFile($uploadedFile);
 
         // ファイル３ テストデータ２行目：同じIDで上書き確認
-
+        $manifestation = $repository->findOneBy(["identifier" => "NINJA-HIMITSU"]);
+        $this->assertNotNull($manifestation);
+        $this->assertEquals("忍者のひみつ2", $manifestation->getTitle());
+        // TODO:ファイル側で空白にした場合にnullを設定する処理
     }
 
     public function testImportEmptyFileReturnsSkipped(): void

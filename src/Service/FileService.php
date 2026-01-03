@@ -218,7 +218,7 @@ class FileService
                         $manifestation = $this->entityManager->getRepository(Manifestation::class)->find($id);
                     }
 
-                    if (!isset($cellvals['title']) &&  isset($cellvals['external_identifier_1'])) {
+                    if ($id === null && !isset($cellvals['title']) &&  isset($cellvals['external_identifier_1'])) {
                         // タイトルなし、外部識別子１（ISBN）あり
                         $bookData = $ndlSearchService->searchByIsbnSru($cellvals['external_identifier_1']);
                         if ($bookData === null) {
@@ -239,6 +239,9 @@ class FileService
                             $manifestation->setIdentifier($this->generateIdentifier($cellvals['external_identifier_1']));
                         }
                     } else {
+                        if (isset($cellvals['identifier'])) {
+                            $manifestation = $this->entityManager->getRepository(Manifestation::class)->findOneBy(["identifier" => $cellvals['identifier']]);
+                        }
                         if ($manifestation === null) {
                             $manifestation = new Manifestation();
                         }
