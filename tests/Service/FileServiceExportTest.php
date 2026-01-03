@@ -9,7 +9,7 @@ use PHPUnit\Framework\TestCase;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use Psr\Log\LoggerInterface;
 
-class FileServiceTest extends TestCase
+class FileServiceExportTest extends TestCase
 {
     private $entityManager;
     private $logger;

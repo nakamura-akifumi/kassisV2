@@ -3,15 +3,20 @@
 namespace App\Service;
 
 use App\Entity\Manifestation;
+use DateTimeInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Csv;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Throwable;
 
+/**
+ * @property $ndlSearchService
+ */
 class FileService
 {
     public function __construct(
@@ -19,6 +24,17 @@ class FileService
         private LoggerInterface        $logger,
     ) {
     }
+
+    private array $keyList = ['id','title','title_transcription','identifier',
+                'external_identifier_1','external_identifier_2','external_identifier_3',
+                'description',
+                'buyer','buyer_identifier','purchase_date','record_source',
+                'type1','type2','type3','type4',
+                'location1','location2', 'contributor1','contributor2',
+                'release_date_string',
+                'status1','status2','price',
+                'created_at','updated_at'
+        ];
 
     /**
      * Manifestation のリストからエクスポートファイルを生成し、一時ファイルのパスを返す。
@@ -84,7 +100,7 @@ class FileService
                     $value = $manifestation->$getter();
                     
                     // DateTime などのオブジェクト処理
-                    if ($value instanceof \DateTimeInterface) {
+                    if ($value instanceof DateTimeInterface) {
                         $value = $value->format('Y-m-d H:i:s');
                     }
 
@@ -103,7 +119,7 @@ class FileService
                 ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
                 ->getStartColor()->setRGB('DDDDDD');
 
-            for ($i = 1; $i <= count($selectedColumns); $i++) {
+            for ($i = 1, $iMax = count($selectedColumns); $i <= $iMax; $i++) {
                 $colLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($i);
                 $sheet->getColumnDimension($colLetter)->setAutoSize(true);
             }
@@ -117,20 +133,26 @@ class FileService
         if ($format === 'csv') {
             $writer = new Csv($spreadsheet);
             $writer->setDelimiter(',');
-            $writer->setEnclosure('"');
             $writer->setLineEnding("\n");
             $writer->setUseBOM(false);
-            $writer->save($tempFile);
         } else {
             $writer = new Xlsx($spreadsheet);
-            $writer->save($tempFile);
         }
+        $writer->save($tempFile);
 
         return $tempFile;
     }
 
+    private function generateFreshHash(): array
+    {
+        $hash = [];
+        foreach($this->keyList as $val){
+            $hash[$val] = null;
+        }
+        return $hash;
+    }
     /**
-     * /file/export のフォーマット（ID, タイトル, 著者, 出版社, 出版年, ISBN）を取り込む。
+     * /file/export のフォーマット（ID, タイトル, 著者, 出版社, 出版年, ISBN ...）を取り込む。
      *
      * @return array{success:int, skipped:int, errors:int, errorMessages: string[]}
      */
@@ -158,11 +180,14 @@ class FileService
             $colMap = $this->buildColumnMapFromHeader($headerRow);
 
             // 必須列（最低限タイトルがないとEntityが作れない）
-            if ($colMap['title'] === null) {
+            if ($colMap['title'] === null && $colMap['identifier'] === null && $colMap['external_identifier_1'] === null) {
                 $result['errors']++;
-                $result['errorMessages'][] = 'ヘッダーに「タイトル」列が見つかりません。/file/export の形式で出力したファイルを使ってください。';
+                $result['errorMessages'][] = 'ヘッダーに「タイトル」、「識別子」、「外部識別子１」のいずれかが見つかりません。特定のフォーマットで出力したファイルを使ってください。';
                 return $result;
             }
+
+            $httpClient = HttpClient::create();
+            $ndlSearchService = new \App\Service\NdlSearchService($httpClient, $this->logger);
 
             // データ行（2行目以降）
             for ($i = 2, $iMax = count($rows); $i <= $iMax; $i++) {
@@ -171,22 +196,16 @@ class FileService
                     continue;
                 }
 
-                $idRaw = $this->getCellValue($row, $colMap['id']);
-                $title = $this->getCellValue($row, $colMap['title']);
-                $author = $this->getCellValue($row, $colMap['author']);
-                $publisher = $this->getCellValue($row, $colMap['publisher']);
-                $publicationYear = $this->getCellValue($row, $colMap['publication_year']);
-                $isbn = $this->getCellValue($row, $colMap['isbn']);
-
-                // 空行はスキップ（タイトルもIDもない等）
-                if ($this->isBlank($title) && $this->isBlank($idRaw) && $this->isBlank($isbn)) {
-                    $result['skipped']++;
-                    continue;
+                $cellvals = $this->generateFreshHash();
+                foreach($this->keyList as $val){
+                    if (isset($colMap[$val])) {
+                        $cellvals[$val] = $this->getCellValue($row, $colMap[$val]);
+                    }
                 }
 
-                if ($this->isBlank($title)) {
-                    $result['errors']++;
-                    $result['errorMessages'][] = sprintf('%d行目: タイトルが空のため取り込みできません。', $i);
+                // 空行はスキップ（title, identifier, external_identifier_1のいずれも無い）
+                if ($this->isBlank($cellvals['title']) && $this->isBlank($cellvals['identifier']) && $this->isBlank($cellvals['external_identifier_1'])) {
+                    $result['skipped']++;
                     continue;
                 }
 
@@ -194,31 +213,103 @@ class FileService
                     $manifestation = null;
 
                     // IDがあれば既存更新を試みる
-                    $id = $this->parseIntOrNull($idRaw);
+                    $id = $this->parseIntOrNull($cellvals['id']);
                     if ($id !== null) {
                         $manifestation = $this->entityManager->getRepository(Manifestation::class)->find($id);
                     }
 
-                    if (!$manifestation instanceof Manifestation) {
-                        $manifestation = new Manifestation();
-                        // identifier が必須なので新規時は必ずセット
-                        $manifestation->setIdentifier($this->generateIdentifier($title, $isbn));
+                    if (!isset($cellvals['title']) &&  isset($cellvals['external_identifier_1'])) {
+                        // タイトルなし、外部識別子１（ISBN）あり
+                        $bookData = $ndlSearchService->searchByIsbnSru($cellvals['external_identifier_1']);
+                        if ($bookData === null) {
+                            $msg = "NDLサーチから取得できませんでした。ISBN: {$cellvals['external_identifier_1']}";
+                            $this->logger->error('Import row failed', [
+                                'row' => $i,
+                                'error' => $msg,
+                            ]);
+                            $result['errors']++;
+                            $result['errorMessages'][] = sprintf('%d行目: 取り込みに失敗しました（NDL取得失敗/不正なISBN記号）', $i);
+                            continue;
+                        }
+
+                        $manifestation = $ndlSearchService->createManifestation($bookData);
+                        if (isset($cellvals['identifier'])) {
+                            $manifestation->setIdentifier($cellvals['identifier']);
+                        } else {
+                            $manifestation->setIdentifier($this->generateIdentifier($cellvals['external_identifier_1']));
+                        }
+                    } else {
+                        if ($manifestation === null) {
+                            $manifestation = new Manifestation();
+                        }
+                        $manifestation->setTitle($cellvals['title']);
+                        $manifestation->setTitleTranscription($cellvals['title_transcription']);
+                        if (isset($cellvals['identifier'])) {
+                            $manifestation->setIdentifier($cellvals['identifier']);
+                        } else {
+                            $manifestation->setIdentifier($this->generateIdentifier($cellvals['external_identifier_1']));
+                        }
+                        $manifestation->setExternalIdentifier1($cellvals['external_identifier_1']);
+                        $manifestation->setType1($cellvals['type1']);
+                        $manifestation->setContributor1($cellvals['contributor1']);
+                        $manifestation->setContributor2($cellvals['contributor2']);
                     }
 
-                    $manifestation->setTitle($title);
-
-                    // Export側の列名（著者/出版社/出版年/ISBN）を、Entityの既存フィールドへマッピング
-                    // 著者 -> contributor1
-                    $manifestation->setContributor1($this->nullIfBlank($author));
-
-                    // 出版社 -> contributor2（暫定：現状のEntityに publisher 専用が無い為）
-                    $manifestation->setContributor2($this->nullIfBlank($publisher));
-
-                    // 出版年 -> release_date_string（暫定）
-                    $manifestation->setReleaseDateString($this->nullIfBlank($publicationYear));
-
-                    // ISBN -> external_identifier1（暫定：現在 export もここを使っている）
-                    $manifestation->setExternalIdentifier1($this->nullIfBlank($isbn));
+                    if (isset($cellvals['external_identifier_2'])) {
+                        $manifestation->setExternalIdentifier2($cellvals['external_identifier_2']);
+                    }
+                    if (isset($cellvals['external_identifier_3'])) {
+                        $manifestation->setExternalIdentifier3($cellvals['external_identifier_3']);
+                    }
+                    if (isset($cellvals['description'])) {
+                        $manifestation->setDescription($cellvals['description']);
+                    }
+                    if (isset($cellvals['buyer'])) {
+                        $manifestation->setBuyer($cellvals['buyer']);
+                    }
+                    if (isset($cellvals['buyer_identifier'])) {
+                        $manifestation->setBuyerIdentifier($cellvals['buyer_identifier']);
+                    }
+                    if (isset($cellvals['purchase_date'])) {
+                        $purchaseDateRaw = $this->getCellValue($row, $colMap['purchase_date']);
+                        try {
+                            $manifestation->setPurchaseDate(new \DateTime($purchaseDateRaw));
+                        } catch (\Exception $e) {
+                            // 日付形式が不正な場合は該当行はエラー扱い
+                            $this->logger->warning('Invalid date format during import', ['value' => $purchaseDateRaw]);
+                            throw $e;
+                        }
+                    }
+                    if (isset($cellvals['record_source'])) {
+                        $manifestation->setRecordSource($cellvals['record_source']);
+                    }
+                    if (isset($cellvals['type2'])) {
+                        $manifestation->setType2($cellvals['type2']);
+                    }
+                    if (isset($cellvals['type3'])) {
+                        $manifestation->setType3($cellvals['type3']);
+                    }
+                    if (isset($cellvals['type4'])) {
+                        $manifestation->setType4($cellvals['type4']);
+                    }
+                    if (isset($cellvals['location1'])) {
+                        $manifestation->setLocation1($cellvals['location1']);
+                    }
+                    if (isset($cellvals['location2'])) {
+                        $manifestation->setLocation2($cellvals['location2']);
+                    }
+                    if (isset($cellvals['status1'])) {
+                        $manifestation->setStatus1($cellvals['status1']);
+                    }
+                    if (isset($cellvals['status2'])) {
+                        $manifestation->setStatus2($cellvals['status2']);
+                    }
+                    if (isset($cellvals['release_date_string'])) {
+                        $manifestation->setReleaseDateString($cellvals['release_date_string']);
+                    }
+                    if (isset($cellvals['price'])) {
+                        $manifestation->setPrice($cellvals['price']);
+                    }
 
                     $this->entityManager->persist($manifestation);
                     $result['success']++;
@@ -262,41 +353,10 @@ class FileService
 
     /**
      * @param array<string, mixed> $headerRow
-     * @return array{id:?string, title:?string, author:?string, publisher:?string, publication_year:?string, isbn:?string}
      */
     private function buildColumnMapFromHeader(array $headerRow): array
     {
-        // 期待ヘッダー（/file/export）
-        // A1: ID, B1: タイトル, C1: 著者, D1: 出版社, E1: 出版年, F1: ISBN
-        $map = [
-            'id' => null,
-            'title' => null,
-            'title_transcription' => null,
-            'identifier' => null,
-            'external_identifier_1' => null,
-            'external_identifier_2' => null,
-            'external_identifier_3' => null,
-            'description' => null,
-            'buyer' => null,
-            'buyer_identifier' => null,
-            'purchase_date' => null,
-            'record_source' => null,
-            'type1' => null,
-            'type2' => null,
-            'type3' => null,
-            'type4' => null,
-            'location1' => null,
-            'location2' => null,
-            'contributor1' => null,
-            'contributor2' => null,
-            'status1' => null,
-            'status2' => null,
-            'release_date_string' => null,
-            'price' => null,
-            'created_at' => null,
-            'updated_at' => null,
-        ];
-
+        $map = $this->generateFreshHash();
         foreach ($headerRow as $col => $value) {
             $label = trim((string) $value);
 
@@ -365,17 +425,12 @@ class FileService
         return $this->isBlank($v) ? null : $v;
     }
 
-    private function generateIdentifier(string $title, ?string $isbn): string
+    private function generateIdentifier(?string $isbn): string
     {
         $base = null;
 
         if (!$this->isBlank($isbn)) {
-            $base = 'isbn-' . preg_replace('/[^0-9Xx]/', '', (string) $isbn);
-        } else {
-            $t = mb_substr(trim($title), 0, 40);
-            $t = preg_replace('/\s+/', '-', $t);
-            $t = preg_replace('/[^a-zA-Z0-9\-\_一-龠ぁ-んァ-ヶー]/u', '', (string) $t);
-            $base = 'title-' . $t;
+            $base = preg_replace('/[^0-9Xx]/', '', (string) $isbn);
         }
 
         // 衝突を避けるため末尾にユニーク値を付与（identifier が unique のため）
