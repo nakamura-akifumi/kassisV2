@@ -62,8 +62,28 @@ class ManifestationRepository extends ServiceEntityRepository
         $qb = $this->createQueryBuilder('m');
 
         if ($q) {
-            $qb->andWhere('m.title LIKE :q OR m.identifier LIKE :q OR m.description LIKE :q')
-                ->setParameter('q', '%' . $q . '%');
+            $keywords = preg_split('/[\s\n\r]+/u', trim($q), -1, PREG_SPLIT_NO_EMPTY);
+            
+            // 改行が含まれている場合は「識別子のみ」を検索対象とする
+            $isMultiLine = str_contains($q, "\n");
+
+            if ($isMultiLine) {
+                // 複数行入力時は識別子のいずれかに一致(OR)
+                $orX = $qb->expr()->orX();
+                foreach ($keywords as $key => $keyword) {
+                    $paramName = 'q_' . $key;
+                    $orX->add("m.identifier = :$paramName"); // 完全一致の方が識別子検索としては一般的
+                    $qb->setParameter($paramName, $keyword);
+                }
+                $qb->andWhere($orX);
+            } else {
+                // 1行入力時は従来通りタイトル等も含める(AND)
+                foreach ($keywords as $key => $keyword) {
+                    $paramName = 'q_' . $key;
+                    $qb->andWhere("(m.title LIKE :$paramName OR m.identifier LIKE :$paramName OR m.description LIKE :$paramName)")
+                       ->setParameter($paramName, '%' . $keyword . '%');
+                }
+            }
         }
 
         if ($title) {
@@ -120,8 +140,7 @@ class ManifestationRepository extends ServiceEntityRepository
             return $this->findAll();
         }
 
-        // 既存の advancedSearch の中身をここに移動するか、DTOから値を展開して呼び出す
-        return $this->advancedSearch(
+        $results = $this->advancedSearch(
             $query->q,
             $query->title,
             $query->identifier,
@@ -132,5 +151,19 @@ class ManifestationRepository extends ServiceEntityRepository
             $query->purchaseDateFrom,
             $query->purchaseDateTo
         );
+
+        // 複数行入力（識別子リスト）の場合は、入力順に並べ替える
+        if ($query->isMultiLine()) {
+            $keywords = preg_split('/[\s\n\r]+/u', trim($query->q), -1, PREG_SPLIT_NO_EMPTY);
+            $keywordOrder = array_flip($keywords);
+
+            usort($results, function($a, $b) use ($keywordOrder) {
+                $orderA = $keywordOrder[$a->getIdentifier()] ?? 99999;
+                $orderB = $keywordOrder[$b->getIdentifier()] ?? 99999;
+                return $orderA <=> $orderB;
+            });
+        }
+
+        return $results;
     }
 }

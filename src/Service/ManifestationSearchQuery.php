@@ -24,6 +24,11 @@ class ManifestationSearchQuery
             || $this->purchaseDateFrom || $this->purchaseDateTo;
     }
 
+    public function isMultiLine(): bool
+    {
+        return $this->q !== null && str_contains($this->q, "\n");
+    }
+
     public static function fromRequest(array $query): self
     {
         return new self(

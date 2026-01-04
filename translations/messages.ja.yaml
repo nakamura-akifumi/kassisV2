@@ -8,7 +8,8 @@ Screen:
     Show: "詳細表示"
     Create: "新規登録"
 Model:
-  actions: "操作"
+  actions:
+    search: "検索"
   Manifestation:
     name: "書誌"
     fields:
