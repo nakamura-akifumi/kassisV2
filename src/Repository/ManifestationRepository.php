@@ -5,6 +5,7 @@ namespace App\Repository;
 use App\Entity\Manifestation;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use App\Service\ManifestationSearchQuery;
 
 class ManifestationRepository extends ServiceEntityRepository
 {
@@ -108,5 +109,28 @@ class ManifestationRepository extends ServiceEntityRepository
         return $qb->orderBy('m.id', 'ASC')
             ->getQuery()
             ->getResult();
+    }
+
+    /**
+     * @return Manifestation[] Returns an array of Manifestation objects
+     */
+    public function searchByQuery(ManifestationSearchQuery $query): array
+    {
+        if (!$query->hasSearchCriteria()) {
+            return $this->findAll();
+        }
+
+        // 既存の advancedSearch の中身をここに移動するか、DTOから値を展開して呼び出す
+        return $this->advancedSearch(
+            $query->q,
+            $query->title,
+            $query->identifier,
+            $query->externalId1,
+            $query->externalId2,
+            $query->externalId3,
+            $query->description,
+            $query->purchaseDateFrom,
+            $query->purchaseDateTo
+        );
     }
 }
