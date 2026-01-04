@@ -97,10 +97,7 @@ class ManifestationRepositoryTest extends KernelTestCase
         $query = new ManifestationSearchQuery(q: "ID001\nID002");
         $results = $this->repository->searchByQuery($query);
 
-        // ID001 と ID002 の両方にマッチするレコードが返ることを期待 (AND検索の場合)
-        // ※ もし「いずれかにマッチ(OR)」にしたい場合は、Repository側のループをORで結合するように修正が必要です。
-        // 現状の advancedSearch は andWhere を重ねているため、両方のIDを断片として含むものを探します。
-        $this->assertCount(0, $results); // 通常 identifier は一意なので、両方を含むものはない
+        $this->assertCount(2, $results);
     }
 
     public function testMultiLineTargetingIdentifierOnly(): void

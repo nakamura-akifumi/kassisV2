@@ -69,7 +69,6 @@
             toggleBtn.addEventListener('click', function() {
                 if (singleInput.classList.contains('d-none')) {
                     // 複数行 -> 1行
-                    // singleInput.value = multiInput.value.replace(/\r?\n/g, ' ').trim();
                     singleInput.value = multiInput.value.trim();
 
                     singleInput.classList.remove('d-none');
