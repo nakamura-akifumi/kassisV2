@@ -143,6 +143,50 @@
             font-weight: 600;
             color: #e74c3c;
         }
+
+        .attachment-section {
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #dee2e6;
+        }
+
+        .attachment-item {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem;
+            background-color: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            margin-bottom: 0.5rem;
+        }
+
+        .attachment-icon {
+            font-size: 1.5rem;
+            margin-right: 1rem;
+            color: #7f8c8d;
+        }
+
+        .attachment-info {
+            flex-grow: 1;
+        }
+
+        .attachment-name {
+            display: block;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .attachment-meta {
+            font-size: 0.8rem;
+            color: #95a5a6;
+        }
+
+        .upload-form-card {
+            background-color: #f1f3f5;
+            border: 1px dashed #ced4da;
+            padding: 1rem;
+            border-radius: 8px;
+        }
     </style>
 {% endblock %}
 
@@ -258,6 +302,63 @@
                         </tr>
                         </tbody>
                     </table>
+
+                    <div class="attachment-section">
+                        <h4><i class="fas fa-paperclip"></i> 添付ファイル</h4>
+                        
+                        {% if manifestation.attachments|length > 0 %}
+                            <div class="mb-4">
+                                {% for attachment in manifestation.attachments %}
+                                    <div class="attachment-item">
+                                        <div class="attachment-icon">
+                                            {% if 'image' in attachment.mimeType %}
+                                                <i class="fas fa-file-image"></i>
+                                            {% elseif 'pdf' in attachment.mimeType %}
+                                                <i class="fas fa-file-pdf"></i>
+                                            {% else %}
+                                                <i class="fas fa-file"></i>
+                                            {% endif %}
+                                        </div>
+                                        <div class="attachment-info">
+                                            <a href="{{ asset(attachment.filePath) }}" target="_blank" class="attachment-name">
+                                                {{ attachment.fileName }}
+                                            </a>
+                                            <div class="attachment-meta">
+                                                {{ (attachment.fileSize / 1024)|number_format(1) }} KB | 
+                                                {{ attachment.createdAt|date('Y-m-d H:i') }}
+                                            </div>
+                                        </div>
+                                        <div class="attachment-actions">
+                                            <form method="post" action="{{ path('app_manifestation_attachment_delete', {'id': attachment.id}) }}" style="display: inline-block" onsubmit="return confirm('このファイルを削除してもよろしいですか？');">
+                                                <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ attachment.id) }}">
+                                                <button class="btn btn-sm btn-outline-danger">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <p class="text-muted">添付ファイルはありません。</p>
+                        {% endif %}
+
+                        <div class="upload-form-card">
+                            <h6>新規ファイル添付</h6>
+                            {{ form_start(attachment_form) }}
+                                <div class="row align-items-end">
+                                    <div class="col-md-9">
+                                        {{ form_row(attachment_form.attachment) }}
+                                    </div>
+                                    <div class="col-md-3">
+                                        <button class="btn btn-success w-100 mb-3">
+                                            <i class="fas fa-upload"></i> アップロード
+                                        </button>
+                                    </div>
+                                </div>
+                            {{ form_end(attachment_form) }}
+                        </div>
+                    </div>
 
                     <div class="action-buttons">
                         <a href="{{ path('app_manifestation_index') }}" class="btn btn-secondary">

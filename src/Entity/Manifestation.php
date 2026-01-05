@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\ManifestationRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
@@ -16,6 +18,9 @@ class Manifestation
     #[ORM\GeneratedValue]
     #[ORM\Column]
     private ?int $id = null;
+
+    #[ORM\OneToMany(mappedBy: 'manifestation', targetEntity: ManifestationAttachment::class, orphanRemoval: true)]
+    private Collection $attachments;
 
     #[ORM\Column(type: Types::TEXT)]
     private ?string $title = null;
@@ -91,6 +96,11 @@ class Manifestation
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
     private ?\DateTimeInterface $updated_at = null;
+
+    public function __construct()
+    {
+        $this->attachments = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -378,6 +388,36 @@ class Manifestation
     public function setUpdatedAt(\DateTimeInterface $updated_at): static
     {
         $this->updated_at = $updated_at;
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, ManifestationAttachment>
+     */
+    public function getAttachments(): Collection
+    {
+        return $this->attachments;
+    }
+
+    public function addAttachment(ManifestationAttachment $attachment): static
+    {
+        if (!$this->attachments->contains($attachment)) {
+            $this->attachments->add($attachment);
+            $attachment->setManifestation($this);
+        }
+
+        return $this;
+    }
+
+    public function removeAttachment(ManifestationAttachment $attachment): static
+    {
+        if ($this->attachments->removeElement($attachment)) {
+            // set the owning side to null (unless already changed)
+            if ($attachment->getManifestation() === $this) {
+                $attachment->setManifestation(null);
+            }
+        }
+
         return $this;
     }
 

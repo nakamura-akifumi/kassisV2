@@ -3,14 +3,18 @@
 namespace App\Controller;
 
 use App\Entity\Manifestation;
+use App\Entity\ManifestationAttachment;
+use App\Form\AttachmentUploadFormType;
 use App\Form\ManifestationType;
 use App\Repository\ManifestationRepository;
 use App\Service\ManifestationSearchQuery;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\File\Exception\FileException;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\String\Slugger\SluggerInterface;
 
 #[Route('/manifestation')]
 final class ManifestationController extends AbstractController
@@ -59,12 +63,73 @@ final class ManifestationController extends AbstractController
         ]);
     }
 
-    #[Route('/{id}', name: 'app_manifestation_show', methods: ['GET'])]
-    public function show(Manifestation $manifestation): Response
+    #[Route('/{id}', name: 'app_manifestation_show', methods: ['GET', 'POST'])]
+    public function show(Request $request, Manifestation $manifestation, EntityManagerInterface $entityManager, SluggerInterface $slugger): Response
     {
+        $form = $this->createForm(AttachmentUploadFormType::class);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $attachmentFile = $form->get('attachment')->getData();
+
+            if ($attachmentFile) {
+                $originalFilename = pathinfo($attachmentFile->getClientOriginalName(), PATHINFO_FILENAME);
+                $safeFilename = $slugger->slug($originalFilename);
+                $newFilename = $safeFilename . '-' . uniqid('', true) . '.' . $attachmentFile->guessExtension();
+
+                // ファイルを移動する前に情報を取得する
+                $fileSize = $attachmentFile->getSize();
+                $mimeType = $attachmentFile->getMimeType();
+
+                try {
+                    $attachmentFile->move(
+                        $this->getParameter('kernel.project_dir') . '/public/uploads/attachments',
+                        $newFilename
+                    );
+
+                    $attachment = new ManifestationAttachment();
+                    $attachment->setManifestation($manifestation);
+                    $attachment->setFileName($attachmentFile->getClientOriginalName());
+                    $attachment->setFilePath('uploads/attachments/' . $newFilename);
+                    $attachment->setFileSize($fileSize);
+                    $attachment->setMimeType($mimeType);
+
+                    $entityManager->persist($attachment);
+                    $entityManager->flush();
+
+                    $this->addFlash('success', 'ファイルを添付しました。');
+                } catch (FileException $e) {
+                    $this->addFlash('error', 'ファイルのアップロードに失敗しました。');
+                }
+            }
+
+            return $this->redirectToRoute('app_manifestation_show', ['id' => $manifestation->getId()], Response::HTTP_SEE_OTHER);
+        }
+
         return $this->render('manifestation/show.html.twig', [
             'manifestation' => $manifestation,
+            'attachment_form' => $form->createView(),
         ]);
+    }
+
+    #[Route('/attachment/{id}/delete', name: 'app_manifestation_attachment_delete', methods: ['POST'])]
+    public function deleteAttachment(Request $request, ManifestationAttachment $attachment, EntityManagerInterface $entityManager): Response
+    {
+        $manifestationId = $attachment->getManifestation()->getId();
+
+        if ($this->isCsrfTokenValid('delete' . $attachment->getId(), $request->request->get('_token'))) {
+            // ファイルの削除
+            $filePath = $this->getParameter('kernel.project_dir') . '/public/' . $attachment->getFilePath();
+            if (file_exists($filePath)) {
+                unlink($filePath);
+            }
+
+            $entityManager->remove($attachment);
+            $entityManager->flush();
+            $this->addFlash('success', '添付ファイルを削除しました。');
+        }
+
+        return $this->redirectToRoute('app_manifestation_show', ['id' => $manifestationId]);
     }
 
     #[Route('/{id}/edit', name: 'app_manifestation_edit', methods: ['GET', 'POST'])]
@@ -83,16 +148,5 @@ final class ManifestationController extends AbstractController
             'manifestation' => $manifestation,
             'form' => $form,
         ]);
-    }
-
-    #[Route('/{id}', name: 'app_manifestation_delete', methods: ['POST'])]
-    public function delete(Request $request, Manifestation $manifestation, EntityManagerInterface $entityManager): Response
-    {
-        if ($this->isCsrfTokenValid('delete' . $manifestation->getId(), $request->getPayload()->getString('_token'))) {
-            $entityManager->remove($manifestation);
-            $entityManager->flush();
-        }
-
-        return $this->redirectToRoute('app_manifestation_index', [], Response::HTTP_SEE_OTHER);
     }
 }
