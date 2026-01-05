@@ -10,6 +10,7 @@ Screen:
 Model:
   actions:
     search: "検索"
+    operation: "操作"
   Manifestation:
     name: "書誌"
     fields:

@@ -3,7 +3,53 @@
 {% block title %}{{ 'Screen.Manifestation.Index'|trans }}{% endblock %}
 
 {% block body %}
-    <h3>{{ 'Screen.Manifestation.Index'|trans }}</h3>
+    <div class="container mt-4">
+        <!-- 検索フォーム -->
+        <div class="card mt-4 mb-4">
+            <div class="card-header">
+                <h5>書誌検索</h5>
+            </div>
+            <div class="card-body">
+                <form action="{{ path('app_manifestation_index') }}" method="get" id="search_form">
+                    <div class="mb-3">
+                        <label for="search_q_single" class="form-label">{{ 'Model.Manifestation.fields.Description'|trans }} / {{ 'Model.Manifestation.fields.Title'|trans }} / {{ 'Model.Manifestation.fields.Identifier'|trans }}</label>
+                        <div class="input-group">
+                            {# 1行入力用 #}
+                            <input type="text" name="q" id="search_q_single" class="form-control"
+                                   value="{{ search_params.q|default('') }}"
+                                   placeholder="キーワードを入力...">
+
+                            {# 複数行入力用 (初期状態は非表示) #}
+                            <textarea name="q" id="search_q_multi" class="form-control d-none"
+                                      rows="5" placeholder="1行に1つの識別子を入力..." disabled>{{ search_params.q|default('') }}</textarea>
+
+                            <button class="btn btn-outline-secondary" type="button" id="toggle_search_mode" title="入力モード切り替え">
+                                <i class="bi bi-textarea-t"> 切り替え </i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="text-end">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-search"></i> {{ 'Model.actions.search'|trans|default('Search') }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- 検索結果を表示するエリア -->
+        <div id="search-results" class="mt-4">
+            <!-- ここに検索結果が動的に表示されます -->
+        </div>
+
+        <!-- ローディングインジケーター -->
+        <div id="loading" class="text-center d-none">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">読み込み中...</span>
+            </div>
+        </div>
+    </div>
+
     <table class="table">
         <thead>
             <tr>
@@ -11,11 +57,8 @@
                 <th>{{ 'Model.Manifestation.fields.Title' | trans }}</th>
                 <th>{{ 'Model.Manifestation.fields.Identifier' | trans }}</th>
                 <th>{{ 'Model.Manifestation.fields.External_identifier1' | trans }}</th>
-                <th>{{ 'Model.Manifestation.fields.External_identifier2' | trans }}</th>
-                <th>{{ 'Model.Manifestation.fields.External_identifier3' | trans }}</th>
-                <th>{{ 'Model.Manifestation.fields.Description' | trans }}</th>
                 <th>{{ 'Model.Manifestation.fields.Purchase_date' | trans }}</th>
-                <th>{{ 'Model.actions' | trans }}</th>
+                <th>{{ 'Model.actions.operation' | trans }}</th>
             </tr>
         </thead>
         <tbody>
@@ -25,9 +68,6 @@
                 <td>{{ manifestation.title }}</td>
                 <td>{{ manifestation.identifier }}</td>
                 <td>{{ manifestation.externalIdentifier1 }}</td>
-                <td>{{ manifestation.externalIdentifier2 }}</td>
-                <td>{{ manifestation.externalIdentifier3 }}</td>
-                <td>{{ manifestation.description }}</td>
                 <td>{{ manifestation.purchaseDate ? manifestation.purchaseDate|date('Y-m-d') : '' }}</td>
                 <td>
                     <a href="{{ path('app_manifestation_show', {'id': manifestation.id}) }}">show</a>
@@ -42,5 +82,72 @@
         </tbody>
     </table>
 
-    <a href="{{ path('app_manifestation_new') }}">Create new</a>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchForm = document.getElementById('search-form');
+            const searchResults = document.getElementById('search-results');
+            const loading = document.getElementById('loading');
+
+            const singleInput = document.getElementById('search_q_single');
+            const multiInput = document.getElementById('search_q_multi');
+            const toggleBtn = document.getElementById('toggle_search_mode');
+
+            toggleBtn.addEventListener('click', function() {
+                if (singleInput.classList.contains('d-none')) {
+                    // 複数行 -> 1行
+                    singleInput.value = multiInput.value.trim();
+
+                    singleInput.classList.remove('d-none');
+                    singleInput.disabled = false;
+                    multiInput.classList.add('d-none');
+                    multiInput.disabled = true;
+                } else {
+                    // 1行 -> 複数行
+                    multiInput.value = singleInput.value;
+
+                    multiInput.classList.remove('d-none');
+                    multiInput.disabled = false;
+                    singleInput.classList.add('d-none');
+                    singleInput.disabled = true;
+                }
+            });
+
+            searchForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+
+                // フォームデータを取得
+                const formData = new FormData(searchForm);
+                const queryParams = new URLSearchParams(formData);
+
+                // ローディング表示
+                loading.classList.remove('d-none');
+                searchResults.innerHTML = '';
+
+                // AJAXリクエスト
+                fetch('{{ path('app_manifestation_search') }}?' + queryParams.toString(), {
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                    .then(response => response.text())
+                    .then(html => {
+                        // ローディング非表示
+                        loading.classList.add('d-none');
+
+                        // 結果を表示
+                        searchResults.innerHTML = html;
+                    })
+                    .catch(error => {
+                        console.error('検索中にエラーが発生しました:', error);
+                        loading.classList.add('d-none');
+                        searchResults.innerHTML = '<div class="alert alert-danger">検索中にエラーが発生しました。再度お試しください。</div>';
+                    });
+            });
+        });
+    </script>
 {% endblock %}
