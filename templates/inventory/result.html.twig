@@ -1,0 +1,94 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}棚卸結果{% endblock %}
+
+{% block body %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>棚卸結果: {{ location }}</h1>
+        <a href="{{ path('app_inventory') }}" class="btn btn-outline-secondary">戻る</a>
+    </div>
+
+    <div class="row g-4">
+        {# 不明リスト #}
+        <div class="col-md-6">
+            <div class="card border-danger h-100">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">不明 ({{ results.missing|length }})</h5>
+                    <small>DBにはあるが、スキャンされなかったもの</small>
+                </div>
+                <div class="card-body p-0">
+                    <ul class="list-group list-group-flush">
+                        {% for item in results.missing %}
+                            <li class="list-group-item">
+                                <span class="fw-bold">{{ item.identifier }}</span><br>
+                                <span class="small">{{ item.title }}</span>
+                            </li>
+                        {% else %}
+                            <li class="list-group-item text-center text-muted">なし</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        {# 余剰リスト #}
+        <div class="col-md-6">
+            <div class="card border-warning h-100">
+                <div class="card-header bg-warning">
+                    <h5 class="mb-0">余剰 ({{ results.extra|length }})</h5>
+                    <small>スキャンされたが、DBのこの場所にはないもの</small>
+                </div>
+                <div class="card-body p-0">
+                    <ul class="list-group list-group-flush">
+                        {% for item in results.extra %}
+                            <li class="list-group-item">
+                                <span class="fw-bold text-danger">{{ item.identifier }}</span><br>
+                                <span class="small">
+                                    {% if item.title is defined %}{{ item.title }}{% else %}未登録アイテム{% endif %}
+                                </span>
+                                {% if item.location1 is defined %}
+                                    <div class="badge bg-light text-dark border">本来の場所: {{ item.location1 }}</div>
+                                {% endif %}
+                            </li>
+                        {% else %}
+                            <li class="list-group-item text-center text-muted">なし</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        {# 未登録リスト #}
+        <div class="col-md-6">
+            <div class="card border-warning h-100">
+                <div class="card-header bg-warning">
+                    <h5 class="mb-0">未登録  ({{ results.unregistered|length }})</h5>
+                    <small>スキャンされたが、システムに存在しないもの</small>
+                </div>
+                <div class="card-body p-0">
+                    <ul class="list-group list-group-flush">
+                        {% for item in results.unregistered %}
+                            <li class="list-group-item">
+                                <span class="fw-bold text-danger">{{ item.identifier }}</span><br>
+                                <span class="small">
+                                    未登録アイテム
+                                </span>
+                            </li>
+                        {% else %}
+                            <li class="list-group-item text-center text-muted">なし</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="mt-4 text-center">
+        <div class="alert alert-success">
+            <strong>正常に一致したアイテム数: {{ results.matched|length }} 件</strong>
+        </div>
+    </div>
+</div>
+{% endblock %}

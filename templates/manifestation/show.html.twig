@@ -202,102 +202,107 @@
                     <table class="detail-table">
                         <tbody>
                         <tr>
-                            <th>ID</th>
+                            <th>{{ 'Model.Manifestation.fields.Id' | trans }}</th>
                             <td>{{ manifestation.id }}</td>
                         </tr>
                         <tr>
-                            <th>タイトル</th>
+                            <th>{{ 'Model.Manifestation.fields.Title' | trans }}</th>
                             <td>{{ manifestation.title }}</td>
                         </tr>
                         <tr>
-                            <th>代替タイトル</th>
+                            <th>{{ 'Model.Manifestation.fields.Title_Transcription' | trans }}</th>
                             <td>{{ manifestation.titleTranscription }}</td>
                         </tr>
                         <tr>
-                            <th>識別子</th>
+                            <th>{{ 'Model.Manifestation.fields.Identifier' | trans }}</th>
                             <td>{{ manifestation.identifier }}</td>
                         </tr>
                         <tr>
-                            <th>外部識別子1</th>
+                            <th>{{ 'Model.Manifestation.fields.External_identifier1' | trans }}</th>
                             <td>{{ manifestation.externalIdentifier1 }}</td>
                         </tr>
                         <tr>
-                            <th>外部識別子2</th>
+                            <th>{{ 'Model.Manifestation.fields.External_identifier2' | trans }}</th>
                             <td>{{ manifestation.externalIdentifier2 }}</td>
                         </tr>
                         <tr>
-                            <th>外部識別子3</th>
+                            <th>{{ 'Model.Manifestation.fields.External_identifier3' | trans }}</th>
                             <td>{{ manifestation.externalIdentifier3 }}</td>
                         </tr>
                         <tr>
-                            <th>説明</th>
+                            <th>{{ 'Model.Manifestation.fields.Description' | trans }}</th>
                             <td>{{ manifestation.description }}</td>
                         </tr>
                         <tr>
-                            <th>購入者</th>
+                            <th>{{ 'Model.Manifestation.fields.Buyer' | trans }}</th>
                             <td>{{ manifestation.buyer }}</td>
                         </tr>
                         <tr>
-                            <th>購入者識別子</th>
+                            <th>{{ 'Model.Manifestation.fields.Buyer_identifier' | trans }}</th>
                             <td>{{ manifestation.buyerIdentifier }}</td>
                         </tr>
                         <tr>
-                            <th>購入日</th>
+                            <th>{{ 'Model.Manifestation.fields.Purchase_date' | trans }}</th>
                             <td>{{ manifestation.purchaseDate ? manifestation.purchaseDate|date('Y-m-d') : '' }}</td>
                         </tr>
                         <tr>
-                            <th>発売日</th>
+                            <th>{{ 'Model.Manifestation.fields.ReleaseDateString' | trans }}</th>
                             <td>{{ manifestation.releaseDateString }}</td>
                         </tr>
                         <tr>
-                            <th>価格</th>
+                            <th>{{ 'Model.Manifestation.fields.Price' | trans }}</th>
                             <td class="price-info">{{ manifestation.formattedPrice }}</td>
                         </tr>
                         <tr>
-                            <th>ステータス</th>
+                            <th>{{ 'Model.Manifestation.fields.Status1' | trans }}</th>
                             <td>
                                 {{ manifestation.status1 }}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>{{ 'Model.Manifestation.fields.Status2' | trans }}</th>
+                            <td>
                                 {{ manifestation.status2 }}
                             </td>
                         </tr>
                         <tr>
-                            <th>タイプ1</th>
+                            <th>{{ 'Model.Manifestation.fields.Type1' | trans }}</th>
                             <td>{{ manifestation.type1 }}</td>
                         </tr>
                         <tr>
-                            <th>タイプ2</th>
+                            <th>{{ 'Model.Manifestation.fields.Type2' | trans }}</th>
                             <td>{{ manifestation.type2 }}</td>
                         </tr>
                         <tr>
-                            <th>タイプ3</th>
+                            <th>{{ 'Model.Manifestation.fields.Type3' | trans }}</th>
                             <td>{{ manifestation.type3 }}</td>
                         </tr>
                         <tr>
-                            <th>タイプ4</th>
+                            <th>{{ 'Model.Manifestation.fields.Type4' | trans }}</th>
                             <td>{{ manifestation.type4 }}</td>
                         </tr>
                         <tr>
-                            <th>場所1</th>
+                            <th>{{ 'Model.Manifestation.fields.Location1' | trans }}</th>
                             <td>{{ manifestation.location1 }}</td>
                         </tr>
                         <tr>
-                            <th>場所2</th>
+                            <th>{{ 'Model.Manifestation.fields.Location2' | trans }}</th>
                             <td>{{ manifestation.location2 }}</td>
                         </tr>
                         <tr>
-                            <th>著者/アーティスト</th>
+                            <th>{{ 'Model.Manifestation.fields.Contributor1' | trans }}</th>
                             <td>{{ manifestation.contributor1 }}</td>
                         </tr>
                         <tr>
-                            <th>出版社/レーベル</th>
+                            <th>{{ 'Model.Manifestation.fields.Contributor2' | trans }}</th>
                             <td>{{ manifestation.contributor2 }}</td>
                         </tr>
                         <tr>
-                            <th>情報源</th>
+                            <th>{{ 'Model.Manifestation.fields.RecordSource' | trans }}</th>
                             <td>{{ manifestation.recordSource }}</td>
                         </tr>
                         <tr>
-                            <th>最終更新日</th>
+                            <th>{{ 'Model.Manifestation.fields.UpdatedAt' | trans }}</th>
                             <td>{{ manifestation.updatedAt ? manifestation.updatedAt|date('Y-m-d H:i:s') : '' }}</td>
                         </tr>
                         </tbody>
@@ -386,21 +391,6 @@
                         </div>
                         <p class="text-muted small mt-2">ISBN: {{ manifestation.externalIdentifier1 }}</p>
                         
-                        {% if manifestation.price or manifestation.releaseDateString %}
-                            <div class="card mt-3 w-100">
-                                <div class="card-body">
-                                    {% if manifestation.price %}
-                                        <p class="mb-1"><strong>価格:</strong> <span class="price-info">{{ manifestation.formattedPrice }}</span></p>
-                                    {% endif %}
-                                    {% if manifestation.releaseDateString %}
-                                        <p class="mb-1"><strong>発売日:</strong> {{ manifestation.releaseDateString }}</p>
-                                    {% endif %}
-                                    {% if manifestation.getLocationInfo %}
-                                        <p class="mb-1"><strong>所在:</strong> {{ manifestation.getLocationInfo }}</p>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        {% endif %}
                     </div>
                 </div>
             </div>

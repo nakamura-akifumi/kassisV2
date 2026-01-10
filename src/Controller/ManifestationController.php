@@ -149,4 +149,15 @@ final class ManifestationController extends AbstractController
             'form' => $form,
         ]);
     }
+
+    #[Route('/{id}', name: 'app_manifestation_delete', methods: ['POST'])]
+    public function delete(Request $request, Manifestation $manifestation, EntityManagerInterface $entityManager): Response
+    {
+        if ($this->isCsrfTokenValid('delete' . $manifestation->getId(), $request->getPayload()->getString('_token'))) {
+            $entityManager->remove($manifestation);
+            $entityManager->flush();
+        }
+
+        return $this->redirectToRoute('app_manifestation_index', [], Response::HTTP_SEE_OTHER);
+    }
 }

@@ -16,7 +16,7 @@ Model:
     fields:
       Id: "ID"
       Title: "タイトル"
-      Transcription: "ヨミ"
+      Title_Transcription: "ヨミ"
       Identifier: "識別子"
       External_identifier1: "外部識別子1"
       External_identifier2: "外部識別子2"
