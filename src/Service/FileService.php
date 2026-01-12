@@ -13,6 +13,7 @@ use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Throwable;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 /**
  * @property $ndlSearchService
@@ -20,6 +21,7 @@ use Throwable;
 class FileService
 {
     public function __construct(
+        private TranslatorInterface $t,
         private EntityManagerInterface $entityManager,
         private LoggerInterface        $logger,
     ) {
@@ -50,31 +52,31 @@ class FileService
         // 項目定義とラベルのマッピング
         $allColumns = [
             'id' => ['label' => 'ID', 'getter' => 'getId'],
-            'title' => ['label' => 'タイトル', 'getter' => 'getTitle'],
-            'titleTranscription' => ['label' => 'ヨミ', 'getter' => 'getTitleTranscription'],
-            'identifier' => ['label' => '識別子', 'getter' => 'getIdentifier'],
-            'externalIdentifier1' => ['label' => '外部識別子１', 'getter' => 'getExternalIdentifier1'],
-            'externalIdentifier2' => ['label' => '外部識別子２', 'getter' => 'getExternalIdentifier2'],
-            'externalIdentifier3' => ['label' => '外部識別子３', 'getter' => 'getExternalIdentifier3'],
-            'description' => ['label' => '説明', 'getter' => 'getDescription'],
-            'buyer' => ['label' => '購入先', 'getter' => 'getBuyer'],
-            'buyerIdentifier' => ['label' => '購入先識別子', 'getter' => 'getBuyerIdentifier'],
-            'purchaseDate' => ['label' => '購入日', 'getter' => 'getPurchaseDate'],
-            'recordSource' => ['label' => '情報取得元', 'getter' => 'getRecordSource'],
-            'type1' => ['label' => '分類１', 'getter' => 'getType1'],
-            'type2' => ['label' => '分類２', 'getter' => 'getType2'],
-            'type3' => ['label' => '分類３', 'getter' => 'getType3'],
-            'type4' => ['label' => '分類４', 'getter' => 'getType4'],
-            'location1' => ['label' => '場所１', 'getter' => 'getLocation1'],
-            'location2' => ['label' => '場所２', 'getter' => 'getLocation2'],
-            'contributor1' => ['label' => '貢献者１', 'getter' => 'getContributor1'],
-            'contributor2' => ['label' => '貢献者２', 'getter' => 'getContributor2'],
-            'status1' => ['label' => 'ステータス１', 'getter' => 'getStatus1'],
-            'status2' => ['label' => 'ステータス２', 'getter' => 'getStatus2'],
-            'releaseDateString' => ['label' => '発売日', 'getter' => 'getReleaseDateString'],
-            'price' => ['label' => '金額', 'getter' => 'getPrice'],
-            'createdAt' => ['label' => '作成日時', 'getter' => 'getCreatedAt'],
-            'updatedAt' => ['label' => '更新日時', 'getter' => 'getUpdatedAt'],
+            'title' => ['label' => $this->t->trans('Model.Manifestation.fields.Title'), 'getter' => 'getTitle'],
+            'titleTranscription' => ['label' => $this->t->trans('Model.Manifestation.fields.Title_Transcription'), 'getter' => 'getTitleTranscription'],
+            'identifier' => ['label' => $this->t->trans('Model.Manifestation.fields.Identifier'), 'getter' => 'getIdentifier'],
+            'externalIdentifier1' => ['label' => $this->t->trans('Model.Manifestation.fields.External_identifier1'), 'getter' => 'getExternalIdentifier1'],
+            'externalIdentifier2' => ['label' => $this->t->trans('Model.Manifestation.fields.External_identifier2'), 'getter' => 'getExternalIdentifier2'],
+            'externalIdentifier3' => ['label' => $this->t->trans('Model.Manifestation.fields.External_identifier3'), 'getter' => 'getExternalIdentifier3'],
+            'description' => ['label' => $this->t->trans('Model.Manifestation.fields.Description'), 'getter' => 'getDescription'],
+            'buyer' => ['label' => $this->t->trans('Model.Manifestation.fields.Buyer'), 'getter' => 'getBuyer'],
+            'buyerIdentifier' => ['label' => $this->t->trans('Model.Manifestation.fields.Buyer_identifier'), 'getter' => 'getBuyerIdentifier'],
+            'purchaseDate' => ['label' => $this->t->trans('Model.Manifestation.fields.Purchase_date'), 'getter' => 'getPurchaseDate'],
+            'recordSource' => ['label' => $this->t->trans('Model.Manifestation.fields.RecordSource'), 'getter' => 'getRecordSource'],
+            'type1' => ['label' => $this->t->trans('Model.Manifestation.fields.Type1'), 'getter' => 'getType1'],
+            'type2' => ['label' => $this->t->trans('Model.Manifestation.fields.Type2'), 'getter' => 'getType2'],
+            'type3' => ['label' => $this->t->trans('Model.Manifestation.fields.Type3'), 'getter' => 'getType3'],
+            'type4' => ['label' => $this->t->trans('Model.Manifestation.fields.Type4'), 'getter' => 'getType4'],
+            'location1' => ['label' => $this->t->trans('Model.Manifestation.fields.Location1'), 'getter' => 'getLocation1'],
+            'location2' => ['label' => $this->t->trans('Model.Manifestation.fields.Location2'), 'getter' => 'getLocation2'],
+            'contributor1' => ['label' => $this->t->trans('Model.Manifestation.fields.Contributor1'), 'getter' => 'getContributor1'],
+            'contributor2' => ['label' => $this->t->trans('Model.Manifestation.fields.Contributor2'), 'getter' => 'getContributor2'],
+            'status1' => ['label' => $this->t->trans('Model.Manifestation.fields.Status1'), 'getter' => 'getStatus1'],
+            'status2' => ['label' => $this->t->trans('Model.Manifestation.fields.Status2'), 'getter' => 'getStatus2'],
+            'releaseDateString' => ['label' => $this->t->trans('Model.Manifestation.fields.ReleaseDateString'), 'getter' => 'getReleaseDateString'],
+            'price' => ['label' => $this->t->trans('Model.Manifestation.fields.Price'), 'getter' => 'getPrice'],
+            'createdAt' => ['label' => $this->t->trans('Model.Manifestation.fields.CreatedAt'), 'getter' => 'getCreatedAt'],
+            'updatedAt' => ['label' => $this->t->trans('Model.Manifestation.fields.UpdatedAt'), 'getter' => 'getUpdatedAt'],
         ];
 
         // 必須項目
@@ -363,32 +365,32 @@ class FileService
         foreach ($headerRow as $col => $value) {
             $label = trim((string) $value);
 
-            if ($label === 'ID') $map['id'] = $col;
-            if ($label === 'タイトル') $map['title'] = $col;
-            if ($label === 'ヨミ') $map["title_transcription"] = $col;
-            if ($label === '識別子') $map['identifier'] = $col;
-            if ($label === '外部識別子１') $map['external_identifier_1'] = $col;
-            if ($label === '外部識別子２') $map['external_identifier_2'] = $col;
-            if ($label === '外部識別子３') $map['external_identifier_3'] = $col;
-            if ($label === '説明') $map['description'] = $col;
-            if ($label === '購入先') $map['buyer'] = $col;
-            if ($label === '購入先識別子') $map['buyer_identifier'] = $col;
-            if ($label === '購入日') $map['purchase_date'] = $col;
-            if ($label === '情報取得元') $map['record_source'] = $col;
-            if ($label === '分類１') $map['type1'] = $col;
-            if ($label === '分類２') $map['type2'] = $col;
-            if ($label === '分類３') $map['type3'] = $col;
-            if ($label === '分類４') $map['type4'] = $col;
-            if ($label === '場所１') $map['location1'] = $col;
-            if ($label === '場所２') $map['location2'] = $col;
-            if ($label === '貢献者１') $map['contributor1'] = $col;
-            if ($label === '貢献者２') $map['contributor2'] = $col;
-            if ($label === 'ステータス１') $map['status1'] = $col;
-            if ($label === 'ステータス２') $map['status2'] = $col;
-            if ($label === '発売日') $map['release_date_string'] = $col;
-            if ($label === '金額') $map['price'] = $col;
-            if ($label === '作成日時') $map['created_at'] = $col;
-            if ($label === '更新日時') $map['updated_at'] = $col;
+            //if ($label === 'ID') $map['id'] = $col;
+            if ($label === $this->t->trans('Model.Manifestation.fields.Title')) $map['title'] = $col;
+            if ($label === $this->t->trans('Model.Manifestation.fields.Title_Transcription')) $map["title_transcription"] = $col;
+            if ($label === $this->t->trans('Model.Manifestation.fields.Identifier')) $map['identifier'] = $col;
+            if ($label === $this->t->trans('Model.Manifestation.fields.External_identifier1')) $map['external_identifier_1'] = $col;
+            if ($label === $this->t->trans('Model.Manifestation.fields.External_identifier2')) $map['external_identifier_2'] = $col;
+            if ($label === $this->t->trans('Model.Manifestation.fields.External_identifier3')) $map['external_identifier_3'] = $col;
+            if ($label === $this->t->trans('Model.Manifestation.fields.Description')) $map['description'] = $col;
+            if ($label === $this->t->trans('Model.Manifestation.fields.Buyer')) $map['buyer'] = $col;
+            if ($label === $this->t->trans('Model.Manifestation.fields.Buyer_identifier')) $map['buyer_identifier'] = $col;
+            if ($label === $this->t->trans('Model.Manifestation.fields.Purchase_date')) $map['purchase_date'] = $col;
+            if ($label === $this->t->trans('Model.Manifestation.fields.RecordSource')) $map['record_source'] = $col;
+            if ($label === $this->t->trans('Model.Manifestation.fields.Type1')) $map['type1'] = $col;
+            if ($label === $this->t->trans('Model.Manifestation.fields.Type2')) $map['type2'] = $col;
+            if ($label === $this->t->trans('Model.Manifestation.fields.Type3')) $map['type3'] = $col;
+            if ($label === $this->t->trans('Model.Manifestation.fields.Type4')) $map['type4'] = $col;
+            if ($label === $this->t->trans('Model.Manifestation.fields.Location1')) $map['location1'] = $col;
+            if ($label === $this->t->trans('Model.Manifestation.fields.Location2')) $map['location2'] = $col;
+            if ($label === $this->t->trans('Model.Manifestation.fields.Contributor1')) $map['contributor1'] = $col;
+            if ($label === $this->t->trans('Model.Manifestation.fields.Contributor2')) $map['contributor2'] = $col;
+            if ($label === $this->t->trans('Model.Manifestation.fields.Status1')) $map['status1'] = $col;
+            if ($label === $this->t->trans('Model.Manifestation.fields.Status2')) $map['status2'] = $col;
+            if ($label === $this->t->trans('Model.Manifestation.fields.ReleaseDateString')) $map['release_date_string'] = $col;
+            if ($label === $this->t->trans('Model.Manifestation.fields.Price')) $map['price'] = $col;
+            if ($label === $this->t->trans('Model.Manifestation.fields.CreatedAt')) $map['created_at'] = $col;
+            if ($label === $this->t->trans('Model.Manifestation.fields.UpdatedAt')) $map['updated_at'] = $col;
         }
 
         return $map;
