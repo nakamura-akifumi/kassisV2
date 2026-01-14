@@ -2,6 +2,17 @@
 
 {% block title %}{{ 'Screen.Manifestation.Index'|trans }}{% endblock %}
 
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        .view-mode-buttons .btn.active { background-color: #007bff; color: white; }
+        .panel-container { display: flex; flex-wrap: wrap; gap: 20px; }
+        .panel-item { width: calc(20% - 16px); text-align: center; border: 1px solid #ddd; padding: 10px; border-radius: 8px; }
+        .panel-item img { max-width: 100%; height: auto; margin-bottom: 8px; }
+        #grid-container { width: 100%; height: 600px; border: 1px solid #ddd; }
+    </style>
+{% endblock %}
+
 {% block body %}
     <div class="container mt-4">
         <!-- 検索フォーム -->
@@ -37,117 +48,142 @@
             </div>
         </div>
 
-        <!-- 検索結果を表示するエリア -->
-        <div id="search-results" class="mt-4">
-            <!-- ここに検索結果が動的に表示されます -->
-        </div>
+            <div class="view-mode-buttons d-flex justify-content-between align-items-center">
+                <div>
+                    <span class="me-2">表示切替:</span>
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-outline-secondary btn-view-mode {{ (view_mode|default('list')) == 'list' ? 'active' : '' }}" data-mode="list" title="リスト方式">
+                            <i class="fas fa-list"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-view-mode {{ (view_mode|default('list')) == 'panel' ? 'active' : '' }}" data-mode="panel" title="パネル方式">
+                            <i class="fas fa-th-large"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-view-mode {{ (view_mode|default('list')) == 'grid' ? 'active' : '' }}" data-mode="grid" title="グリッド形式">
+                            <i class="fas fa-table"></i>
+                        </button>
+                    </div>
+                </div>
+                <div>
+                    <button type="button" id="btn-export" class="btn btn-outline-success">
+                        <i class="fas fa-file-export"></i> エクスポート
+                    </button>
+                </div>
+            </div>
 
-        <!-- ローディングインジケーター -->
-        <div id="loading" class="text-center d-none">
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">読み込み中...</span>
+            <!-- 検索結果を表示するエリア -->
+            <div id="search-results" class="mt-4">
+                {% if (view_mode|default('list')) != 'grid' %}
+                    {% include 'manifestation/_results_list.html.twig' %}
+                {% else %}
+                    <div id="grid-container" class="grid-sample" style="height: 600px;"></div>
+                {% endif %}
+            </div>
+
+            <!-- ローディングインジケーター (不足していた要素を追加) -->
+            <div id="loading" class="text-center d-none my-4">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">読み込み中...</span>
+                </div>
             </div>
         </div>
-    </div>
+    {% endblock %}
 
-    <table class="table">
-        <thead>
-            <tr>
-                <th>{{ 'Model.Manifestation.fields.Id' | trans }}</th>
-                <th>{{ 'Model.Manifestation.fields.Title' | trans }}</th>
-                <th>{{ 'Model.Manifestation.fields.Identifier' | trans }}</th>
-                <th>{{ 'Model.Manifestation.fields.External_identifier1' | trans }}</th>
-                <th>{{ 'Model.Manifestation.fields.Purchase_date' | trans }}</th>
-                <th>{{ 'Model.actions.operation' | trans }}</th>
-            </tr>
-        </thead>
-        <tbody>
-        {% for manifestation in manifestations %}
-            <tr>
-                <td>{{ manifestation.id }}</td>
-                <td>{{ manifestation.title }}</td>
-                <td>{{ manifestation.identifier }}</td>
-                <td>{{ manifestation.externalIdentifier1 }}</td>
-                <td>{{ manifestation.purchaseDate ? manifestation.purchaseDate|date('Y-m-d') : '' }}</td>
-                <td>
-                    <a href="{{ path('app_manifestation_show', {'id': manifestation.id}) }}">show</a>
-                    <a href="{{ path('app_manifestation_edit', {'id': manifestation.id}) }}">edit</a>
-                </td>
-            </tr>
-        {% else %}
-            <tr>
-                <td colspan="9">no records found</td>
-            </tr>
-        {% endfor %}
-        </tbody>
-    </table>
+    {% block javascripts %}
+        {{ parent() }}
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                let grid = null;
+                const searchForm = document.getElementById('search_form');
+                const searchResults = document.getElementById('search-results');
+                const loading = document.getElementById('loading');
+                let currentViewMode = '{{ view_mode|default("list") }}';
 
-{% endblock %}
+                // 表示切替ボタンのクリックイベント
+                document.querySelectorAll('.btn-view-mode').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const newMode = this.getAttribute('data-mode');
+                        
+                        // hidden field がなければ作成、あれば更新
+                        let modeInput = searchForm.querySelector('input[name="view_mode"]');
+                        if (!modeInput) {
+                            modeInput = document.createElement('input');
+                            modeInput.type = 'hidden';
+                            modeInput.name = 'view_mode';
+                            searchForm.appendChild(modeInput);
+                        }
+                        modeInput.value = newMode;
+                        
+                        // 通常のフォーム送信（ページリロード）を行うことで検索条件を維持
+                        searchForm.submit();
+                    });
+                });
 
-{% block javascripts %}
-    {{ parent() }}
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const searchForm = document.getElementById('search-form');
-            const searchResults = document.getElementById('search-results');
-            const loading = document.getElementById('loading');
+                // エクスポートボタンのクリックイベント
+                const exportBtn = document.getElementById('btn-export');
+                if (exportBtn) {
+                    exportBtn.addEventListener('click', function() {
+                        const formData = new FormData(searchForm);
+                        const queryParams = new URLSearchParams(formData);
+                        // view_modeはエクスポートには不要なので削除（任意）
+                        queryParams.delete('view_mode');
+                        
+                        // エクスポート画面のURLへ、現在の検索パラメータを付与して遷移
+                        window.location.href = '{{ path('app_manifestation_file_export') }}?' + queryParams.toString();
+                    });
+                }
 
-            const singleInput = document.getElementById('search_q_single');
-            const multiInput = document.getElementById('search_q_multi');
-            const toggleBtn = document.getElementById('toggle_search_mode');
+                // ... existing toggle logic ...
 
-            toggleBtn.addEventListener('click', function() {
-                if (singleInput.classList.contains('d-none')) {
-                    // 複数行 -> 1行
-                    singleInput.value = multiInput.value.trim();
+                searchForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    const formData = new FormData(searchForm);
+                    const viewMode = '{{ view_mode|default("list") }}';
+                    formData.set('view_mode', viewMode);
+                    const queryParams = new URLSearchParams(formData);
 
-                    singleInput.classList.remove('d-none');
-                    singleInput.disabled = false;
-                    multiInput.classList.add('d-none');
-                    multiInput.disabled = true;
-                } else {
-                    // 1行 -> 複数行
-                    multiInput.value = singleInput.value;
+                    loading.classList.remove('d-none');
 
-                    multiInput.classList.remove('d-none');
-                    multiInput.disabled = false;
-                    singleInput.classList.add('d-none');
-                    singleInput.disabled = true;
+                    fetch('{{ path('app_manifestation_search') }}?' + queryParams.toString(), {
+                        method: 'GET',
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    })
+                    .then(response => (viewMode === 'grid' ? response.json() : response.text()))
+                    .then(data => {
+                        loading.classList.add('d-none');
+                        if (viewMode === 'grid') {
+                            renderGrid(data);
+                        } else {
+                            searchResults.innerHTML = data;
+                        }
+                    });
+                });
+
+                function renderGrid(records) {
+                    const parentElement = document.getElementById("grid-container");
+                    if (!parentElement) return;
+
+                    if (grid) {
+                        grid.records = records;
+                    } else {
+                        grid = new cheetahGrid.ListGrid({
+                            parentElement: parentElement,
+                            header: [
+                                { field: "id", caption: "ID", width: 60 },
+                                { field: "title", caption: "タイトル", width: 300 },
+                                { field: "identifier", caption: "識別子", width: 150 },
+                                { field: "externalIdentifier1", caption: "外部ID1", width: 150 },
+                                { field: "purchaseDate", caption: "購入日", width: 120 },
+                            ],
+                            records: records,
+                            frozenColCount: 1,
+                        });
+                    }
+                }
+
+                // 初期状態が grid の場合は自動実行
+                if ('{{ view_mode|default("list") }}' === 'grid') {
+                    searchForm.dispatchEvent(new Event('submit'));
                 }
             });
-
-            searchForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-
-                // フォームデータを取得
-                const formData = new FormData(searchForm);
-                const queryParams = new URLSearchParams(formData);
-
-                // ローディング表示
-                loading.classList.remove('d-none');
-                searchResults.innerHTML = '';
-
-                // AJAXリクエスト
-                fetch('{{ path('app_manifestation_search') }}?' + queryParams.toString(), {
-                    method: 'GET',
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                })
-                    .then(response => response.text())
-                    .then(html => {
-                        // ローディング非表示
-                        loading.classList.add('d-none');
-
-                        // 結果を表示
-                        searchResults.innerHTML = html;
-                    })
-                    .catch(error => {
-                        console.error('検索中にエラーが発生しました:', error);
-                        loading.classList.add('d-none');
-                        searchResults.innerHTML = '<div class="alert alert-danger">検索中にエラーが発生しました。再度お試しください。</div>';
-                    });
-            });
-        });
-    </script>
-{% endblock %}
+        </script>
+    {% endblock %}

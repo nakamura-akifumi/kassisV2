@@ -24,10 +24,26 @@ final class ManifestationController extends AbstractController
     {
         $searchQuery = ManifestationSearchQuery::fromRequest($request->query->all());
         $manifestations = $manifestationRepository->searchByQuery($searchQuery);
+        $viewMode = $request->query->get('view_mode', 'list') ?: 'list';
+
+        if ($request->isXmlHttpRequest() && $viewMode === 'grid') {
+            $data = [];
+            foreach ($manifestations as $m) {
+                $data[] = [
+                    'id' => $m->getId(),
+                    'title' => $m->getTitle(),
+                    'identifier' => $m->getIdentifier(),
+                    'externalIdentifier1' => $m->getExternalIdentifier1(),
+                    'purchaseDate' => $m->getPurchaseDate()?->format('Y-m-d'),
+                ];
+            }
+            return $this->json($data);
+        }
 
         return $this->render('manifestation/search.html.twig', [
             'manifestations' => $manifestations,
             'search_params' => $request->query->all(),
+            'view_mode' => $viewMode,
         ]);
     }
 
@@ -36,10 +52,15 @@ final class ManifestationController extends AbstractController
     {
         $searchQuery = ManifestationSearchQuery::fromRequest($request->query->all());
         $manifestations = $manifestationRepository->searchByQuery($searchQuery);
+        $viewMode = $request->query->get('view_mode', 'list');
+        if ($viewMode === null) {
+            $viewMode = 'list';
+        }
 
         return $this->render('manifestation/index.html.twig', [
             'manifestations' => $manifestations,
             'search_params' => $request->query->all(),
+            'view_mode' => $viewMode,
         ]);
     }
 

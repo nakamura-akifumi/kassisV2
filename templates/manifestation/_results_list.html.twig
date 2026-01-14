@@ -1,0 +1,42 @@
+{% if (view_mode|default('list')) == 'list' %}
+    <table class="table">
+        <thead>
+            <tr>
+                <th>{{ 'Model.Manifestation.fields.Title' | trans }}</th>
+                <th>{{ 'Model.Manifestation.fields.Identifier' | trans }}</th>
+                <th>{{ 'Model.Manifestation.fields.External_identifier1' | trans }}</th>
+                <th>{{ 'Model.Manifestation.fields.Purchase_date' | trans }}</th>
+                <th>{{ 'Model.actions.operation' | trans }}</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for manifestation in manifestations %}
+            <tr>
+                <td>{{ manifestation.title }}</td>
+                <td>{{ manifestation.identifier }}</td>
+                <td>{{ manifestation.externalIdentifier1 }}</td>
+                <td>{{ manifestation.purchaseDate ? manifestation.purchaseDate|date('Y-m-d') : '' }}</td>
+                <td>
+                    <a href="{{ path('app_manifestation_show', {'id': manifestation.id}) }}">show</a>
+                </td>
+            </tr>
+        {% else %}
+            <tr><td colspan="6">no records found</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+{% elseif view_mode == 'panel' %}
+    <div class="panel-container">
+        {% for manifestation in manifestations %}
+            <div class="panel-item">
+                <div class="fw-bold">{{ manifestation.title }}</div>
+                <small class="text-muted">{{ manifestation.identifier }}</small>
+                <div class="mt-2">
+                    <a href="{{ path('app_manifestation_show', {'id': manifestation.id}) }}" class="btn btn-sm btn-outline-primary">詳細</a>
+                </div>
+            </div>
+        {% else %}
+            <p>no records found</p>
+        {% endfor %}
+    </div>
+{% endif %}

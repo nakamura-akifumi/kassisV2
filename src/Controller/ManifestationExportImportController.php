@@ -6,6 +6,7 @@ use App\Form\ManifestationFileExportFormType;
 use App\Form\ManifestationFileImportFormType;
 use App\Repository\ManifestationRepository;
 use App\Service\FileService;
+use App\Service\ManifestationSearchQuery;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -72,32 +73,16 @@ class ManifestationExportImportController extends AbstractController
         
         $format = (string) $form->get('format')->getData(); // xlsx|csv
 
-        // 検索条件の取得（画面表示時は query、POST時も query の条件を引き継ぐ）
-        $searchTitle = $request->query->get('title');
-        $searchAuthor = $request->query->get('author');
-        $searchPublisher = $request->query->get('publisher');
-        $searchIsbn = $request->query->get('isbn');
-
-        if ($searchTitle || $searchAuthor || $searchPublisher || $searchIsbn) {
-            $manifestations = $manifestationRepository->findBySearchCriteria(
-                $searchTitle,
-                $searchAuthor,
-                $searchPublisher,
-                $searchIsbn
-            );
-        } else {
-            $manifestations = $manifestationRepository->findAll();
-        }
+        // 一覧画面と同じ検索クエリクラスを使用して条件を構築
+        $searchQuery = ManifestationSearchQuery::fromRequest($request->query->all());
+        
+        // リポジトリの統一された検索メソッドを呼び出す
+        $manifestations = $manifestationRepository->searchByQuery($searchQuery);
 
         $columns = $form->get('columns')->getData();
-
-        $this->logger->info(var_export($columns, true));
-
         $tempFile = $fileService->generateExportFile($manifestations, $format, $columns);
 
         $fileNameParts = ['manifestations'];
-        if ($searchTitle) $fileNameParts[] = 'title-' . substr(preg_replace('/[^a-z0-9]/i', '', (string)$searchTitle), 0, 10);
-        if ($searchAuthor) $fileNameParts[] = 'author-' . substr(preg_replace('/[^a-z0-9]/i', '', (string)$searchAuthor), 0, 10);
 
         $baseName = implode('_', $fileNameParts) . '_' . date('Y-m-d_H-i-s');
         $fileName = $baseName . ($format === 'csv' ? '.csv' : '.xlsx');
