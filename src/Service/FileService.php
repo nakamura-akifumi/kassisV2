@@ -3,13 +3,17 @@
 namespace App\Service;
 
 use App\Entity\Manifestation;
+use DateTime;
 use DateTimeInterface;
 use Doctrine\ORM\EntityManagerInterface;
+use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Writer\Csv;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Throwable;
@@ -28,7 +32,7 @@ class FileService
     }
 
     private array $keyList = ['id','title','title_transcription','identifier',
-                'external_identifier_1','external_identifier_2','external_identifier_3',
+                'external_identifier1','external_identifier2','external_identifier3',
                 'description',
                 'buyer','buyer_identifier','purchase_date','record_source',
                 'type1','type2','type3','type4',
@@ -114,22 +118,22 @@ class FileService
         }
 
         // スタイル調整（xlsxのみ）
-        $lastColLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex(count($selectedColumns));
+        $lastColLetter = Coordinate::stringFromColumnIndex(count($selectedColumns));
         if ($format === 'xlsx') {
             $sheet->getStyle("A1:{$lastColLetter}1")->getFont()->setBold(true);
             $sheet->getStyle("A1:{$lastColLetter}1")->getFill()
-                ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
+                ->setFillType(Fill::FILL_SOLID)
                 ->getStartColor()->setRGB('DDDDDD');
 
             for ($i = 1, $iMax = count($selectedColumns); $i <= $iMax; $i++) {
-                $colLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($i);
+                $colLetter = Coordinate::stringFromColumnIndex($i);
                 $sheet->getColumnDimension($colLetter)->setAutoSize(true);
             }
         }
 
         $tempFile = tempnam(sys_get_temp_dir(), 'export_');
         if ($tempFile === false) {
-            throw new \RuntimeException('一時ファイルの作成に失敗しました。');
+            throw new RuntimeException('一時ファイルの作成に失敗しました。');
         }
 
         if ($format === 'csv') {
@@ -182,14 +186,14 @@ class FileService
             $colMap = $this->buildColumnMapFromHeader($headerRow);
 
             // 必須列（最低限タイトルがないとEntityが作れない）
-            if ($colMap['title'] === null && $colMap['identifier'] === null && $colMap['external_identifier_1'] === null) {
+            if ($colMap['title'] === null && $colMap['identifier'] === null && $colMap['external_identifier1'] === null) {
                 $result['errors']++;
                 $result['errorMessages'][] = 'ヘッダーに「タイトル」、「識別子」、「外部識別子１」のいずれかが見つかりません。特定のフォーマットで出力したファイルを使ってください。';
                 return $result;
             }
 
             $httpClient = HttpClient::create();
-            $ndlSearchService = new \App\Service\NdlSearchService($httpClient, $this->logger);
+            $ndlSearchService = new NdlSearchService($httpClient, $this->logger);
 
             // データ行（2行目以降）
             for ($i = 2, $iMax = count($rows); $i <= $iMax; $i++) {
@@ -205,8 +209,8 @@ class FileService
                     }
                 }
 
-                // 空行はスキップ（title, identifier, external_identifier_1のいずれも無い）
-                if ($this->isBlank($cellvals['title']) && $this->isBlank($cellvals['identifier']) && $this->isBlank($cellvals['external_identifier_1'])) {
+                // 空行はスキップ（title, identifier, external_identifier1のいずれも無い）
+                if ($this->isBlank($cellvals['title']) && $this->isBlank($cellvals['identifier']) && $this->isBlank($cellvals['external_identifier1'])) {
                     $result['skipped']++;
                     continue;
                 }
@@ -220,11 +224,11 @@ class FileService
                         $manifestation = $this->entityManager->getRepository(Manifestation::class)->find($id);
                     }
 
-                    if ($id === null && !isset($cellvals['title']) &&  isset($cellvals['external_identifier_1'])) {
+                    if ($id === null && !isset($cellvals['title']) &&  isset($cellvals['external_identifier1'])) {
                         // タイトルなし、外部識別子１（ISBN）あり
-                        $bookData = $ndlSearchService->searchByIsbnSru($cellvals['external_identifier_1']);
+                        $bookData = $ndlSearchService->searchByIsbnSru($cellvals['external_identifier1']);
                         if ($bookData === null) {
-                            $msg = "NDLサーチから取得できませんでした。ISBN: {$cellvals['external_identifier_1']}";
+                            $msg = "NDLサーチから取得できませんでした。ISBN: {$cellvals['external_identifier1']}";
                             $this->logger->error('Import row failed', [
                                 'row' => $i,
                                 'error' => $msg,
@@ -238,7 +242,7 @@ class FileService
                         if (isset($cellvals['identifier'])) {
                             $manifestation->setIdentifier($cellvals['identifier']);
                         } else {
-                            $manifestation->setIdentifier($this->generateIdentifier($cellvals['external_identifier_1']));
+                            $manifestation->setIdentifier($this->generateIdentifier($cellvals['external_identifier1']));
                         }
                     } else {
                         if (isset($cellvals['identifier'])) {
@@ -252,19 +256,19 @@ class FileService
                         if (isset($cellvals['identifier'])) {
                             $manifestation->setIdentifier($cellvals['identifier']);
                         } else {
-                            $manifestation->setIdentifier($this->generateIdentifier($cellvals['external_identifier_1']));
+                            $manifestation->setIdentifier($this->generateIdentifier($cellvals['external_identifier1']));
                         }
-                        $manifestation->setExternalIdentifier1($cellvals['external_identifier_1']);
+                        $manifestation->setExternalIdentifier1($cellvals['external_identifier1']);
                         $manifestation->setType1($cellvals['type1']);
                         $manifestation->setContributor1($cellvals['contributor1']);
                         $manifestation->setContributor2($cellvals['contributor2']);
                     }
 
-                    if (isset($cellvals['external_identifier_2'])) {
-                        $manifestation->setExternalIdentifier2($cellvals['external_identifier_2']);
+                    if (isset($cellvals['external_identifier2'])) {
+                        $manifestation->setExternalIdentifier2($cellvals['external_identifier2']);
                     }
-                    if (isset($cellvals['external_identifier_3'])) {
-                        $manifestation->setExternalIdentifier3($cellvals['external_identifier_3']);
+                    if (isset($cellvals['external_identifier3'])) {
+                        $manifestation->setExternalIdentifier3($cellvals['external_identifier3']);
                     }
                     if (isset($cellvals['description'])) {
                         $manifestation->setDescription($cellvals['description']);
@@ -275,14 +279,16 @@ class FileService
                     if (isset($cellvals['buyer_identifier'])) {
                         $manifestation->setBuyerIdentifier($cellvals['buyer_identifier']);
                     }
-                    if (isset($cellvals['purchase_date'])) {
-                        $purchaseDateRaw = $this->getCellValue($row, $colMap['purchase_date']);
+                    if (isset($cellvals['purchase_date']) && !$this->isBlank($cellvals['purchase_date'])) {
+                        $purchaseDateRaw = $cellvals['purchase_date'];
                         try {
-                            $manifestation->setPurchaseDate(new \DateTime($purchaseDateRaw));
+                            // Excelのシリアル値や多様な形式に対応するため、パースを試みる
+                            $manifestation->setPurchaseDate(new DateTime($purchaseDateRaw));
                         } catch (\Exception $e) {
-                            // 日付形式が不正な場合は該当行はエラー扱い
-                            $this->logger->warning('Invalid date format during import', ['value' => $purchaseDateRaw]);
-                            throw $e;
+                            // 日付形式が不正な場合はエラー行にする
+                            $result['errors']++;
+                            $result['errorMessages'][] = sprintf('%d行目: 取り込みに失敗しました（不正な日付 %s）', $i, $purchaseDateRaw);
+                            continue;
                         }
                     }
                     if (isset($cellvals['record_source'])) {
@@ -365,13 +371,13 @@ class FileService
         foreach ($headerRow as $col => $value) {
             $label = trim((string) $value);
 
-            //if ($label === 'ID') $map['id'] = $col;
+            if ($label === 'ID' || $label === 'id') $map['id'] = $col;
             if ($label === $this->t->trans('Model.Manifestation.fields.Title')) $map['title'] = $col;
             if ($label === $this->t->trans('Model.Manifestation.fields.Title_Transcription')) $map["title_transcription"] = $col;
             if ($label === $this->t->trans('Model.Manifestation.fields.Identifier')) $map['identifier'] = $col;
-            if ($label === $this->t->trans('Model.Manifestation.fields.External_identifier1')) $map['external_identifier_1'] = $col;
-            if ($label === $this->t->trans('Model.Manifestation.fields.External_identifier2')) $map['external_identifier_2'] = $col;
-            if ($label === $this->t->trans('Model.Manifestation.fields.External_identifier3')) $map['external_identifier_3'] = $col;
+            if ($label === $this->t->trans('Model.Manifestation.fields.External_identifier1')) $map['external_identifier1'] = $col;
+            if ($label === $this->t->trans('Model.Manifestation.fields.External_identifier2')) $map['external_identifier2'] = $col;
+            if ($label === $this->t->trans('Model.Manifestation.fields.External_identifier3')) $map['external_identifier3'] = $col;
             if ($label === $this->t->trans('Model.Manifestation.fields.Description')) $map['description'] = $col;
             if ($label === $this->t->trans('Model.Manifestation.fields.Buyer')) $map['buyer'] = $col;
             if ($label === $this->t->trans('Model.Manifestation.fields.Buyer_identifier')) $map['buyer_identifier'] = $col;
@@ -425,12 +431,7 @@ class FileService
         return $v === null || trim($v) === '';
     }
 
-    private function nullIfBlank(?string $v): ?string
-    {
-        return $this->isBlank($v) ? null : $v;
-    }
-
-    private function generateIdentifier(?string $isbn): string
+    private function generateIdentifier(?string $isbn, ?bool $withUnique = true): string
     {
         $base = null;
 
@@ -439,6 +440,9 @@ class FileService
         }
 
         // 衝突を避けるため末尾にユニーク値を付与（identifier が unique のため）
-        return rtrim((string) $base, '-') . '-' . bin2hex(random_bytes(4));
+        if ($withUnique) {
+            $base = rtrim((string) $base, '-') . '-' . bin2hex(random_bytes(4));
+        }
+        return $base;
     }
 }

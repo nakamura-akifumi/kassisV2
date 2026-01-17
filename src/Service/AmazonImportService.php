@@ -12,20 +12,24 @@ use Symfony\Component\Uid\Uuid;
 class AmazonImportService
 {
     private EntityManagerInterface $entityManager;
-    private SluggerInterface $slugger;
     private string $projectDir;
     private LoggerInterface $logger;
+    protected NdlImportService $ndlImportService;
+    private bool $useNdl;
+
 
     public function __construct(
+        NdlImportService $ndlImportService,
         EntityManagerInterface $entityManager,
-        SluggerInterface $slugger,
         LoggerInterface $logger,
-        string $projectDir
+        string $projectDir,
+        bool $useNdl
     ) {
         $this->entityManager = $entityManager;
-        $this->slugger = $slugger;
         $this->logger = $logger;
         $this->projectDir = $projectDir;
+        $this->ndlImportService = $ndlImportService;
+        $this->useNdl = $useNdl;
     }
 
     public function processFile(UploadedFile $zipFile, bool $onlyIsbnAsin = false): array
@@ -178,6 +182,7 @@ class AmazonImportService
         }
 
         // ヘッダー行を読み込む
+        // TODO: fgetcsvのパラメータを考慮する
         $headers = fgetcsv($handle);
         if (!$headers) {
             $this->logger->error('CSVファイルの形式が正しくありません', ['path' => $csvPath]);
@@ -211,29 +216,29 @@ class AmazonImportService
             $purchaseType = "Digital";
             $titleIndex = array_search('ProductName', $headers);
             $asinIndex = array_search('ASIN', $headers);
-            $BuyerIndex = array_search('Marketplace', $headers);
+            $buyerIndex = array_search('Marketplace', $headers);
             $orderDateIndex = array_search('OrderDate', $headers);
-            $orderIdIndex = array_search('OrderID', $headers);
-            $QuantityIndex = array_search('Quantity', $headers);
+            $orderIdIndex = array_search('Order ID', $headers);
+            //$QuantityIndex = array_search('Quantity', $headers);
+            $priceIndex = array_search('Total Owed', $headers);
         } elseif (in_array($csvFilesWithoutPath, $needRetailFiles)) {
             // Retail
             $purchaseType = "Retail";
             $titleIndex = array_search('Product Name', $headers);
             $asinIndex = array_search('ASIN', $headers);
-            $BuyerIndex = array_search('Website', $headers);
+            $buyerIndex = array_search('Website', $headers);
             $orderDateIndex = array_search('Order Date', $headers);
             $orderIdIndex = array_search('Order ID', $headers);
-            $QuantityIndex = array_search('Quantity', $headers);
+            //$QuantityIndex = array_search('Quantity', $headers);
+            $priceIndex = array_search('Total Owed', $headers);
         } else {
             $this->logger->debug('処理対象外のファイルです。'.$csvFilesWithoutPath);
             return $result;
         }
 
-        $this->logger->debug(var_export($headers, true));
-
         if ($titleIndex === false || $asinIndex === false) {
             $this->logger->error('CSVファイルに必要なカラムが見つかりませんでした', [
-                'requiredColumns' => ['Title', 'ASIN', 'Order Date'],
+                'requiredColumns' => ['Title', 'ASIN'],
                 'foundColumns' => $headers
             ]);
             $result['errors']++;
@@ -242,20 +247,20 @@ class AmazonImportService
             return $result;
         }
 
+        $repository = $this->entityManager->getRepository(Manifestation::class);
+
         // CSVファイルを行ごとに処理
         $rowCount = 0;
         while (($data = fgetcsv($handle)) !== false) {
             $rowCount++;
             try {
-                $buyerIdentifier = $data[$orderIdIndex].":".$data[$asinIndex];
                 // すでに同じ購入識別子が存在するか確認
-                $existingItem = $this->entityManager->getRepository(Manifestation::class)
-                    ->findOneBy(['buyer_identifier' => $buyerIdentifier]);
+                $buyerIdentifier = $data[$orderIdIndex]."_".$data[$asinIndex];
+                $existingItem = $repository->findOneBy(['buyer_identifier' => $buyerIdentifier]);
 
                 if ($existingItem) {
                     $this->logger->debug('同一購入識別子が既に存在するためスキップします', [
-                        'buyer_identifier' => $buyerIdentifier,
-                        'title' => $title
+                        'buyer_identifier' => $buyerIdentifier
                     ]);
                     $result['skipped']++;
                     continue;
@@ -267,15 +272,10 @@ class AmazonImportService
                     $result['skipped']++;
                     continue;
                 }
-                if ($title === 'Not Applicable') {
-                    $this->logger->debug('タイトルが[Not Applicable]のため行をスキップします', ['row' => $rowCount]);
-                    $result['skipped']++;
-                    continue;
-                }
 
                 $buyer = null;
-                if ($BuyerIndex !== false && !empty($data[$BuyerIndex])) {
-                    $buyer = $data[$BuyerIndex];
+                if ($buyerIndex !== false && !empty($data[$buyerIndex])) {
+                    $buyer = $data[$buyerIndex];
                 }
                 
                 // ASIN
@@ -289,41 +289,12 @@ class AmazonImportService
                 // ISBN
                 $externalIdentifier1 = null;
                 if ($externalIdentifier3 !== null) {
-                    // ISBNかどうかチェック (ISBN-10 または ISBN-13)
-                    $cleanIsbn = preg_replace('/[^0-9X]/i', '', $externalIdentifier3);
-                    $isValidIsbn = false;
-
-                    if (strlen($cleanIsbn) === 10) {
-                        // ISBN-10 チェック
-                        $sum = 0;
-                        for ($i = 0; $i < 9; $i++) {
-                            $sum += (int)$cleanIsbn[$i] * (10 - $i);
-                        }
-                        $checkDigit = $cleanIsbn[9];
-                        $sum += ($checkDigit === 'X' || $checkDigit === 'x') ? 10 : (int)$checkDigit;
-                        $isValidIsbn = ($sum % 11 === 0);
-                    } elseif (strlen($cleanIsbn) === 13) {
-                        // ISBN-13 チェック
-                        $sum = 0;
-                        for ($i = 0; $i < 12; $i++) {
-                            $sum += (int)$cleanIsbn[$i] * (($i % 2 === 0) ? 1 : 3);
-                        }
-                        $checkDigit = (10 - ($sum % 10)) % 10;
-                        $isValidIsbn = ((int)$cleanIsbn[12] === $checkDigit);
-                    }
-                    if ($isValidIsbn) {
-                        if (strlen($cleanIsbn) === 10) {
-                            // ISBN-10をISBN-13に変換
-                            $isbn13Base = '978' . substr($cleanIsbn, 0, 9);
-                            $sum = 0;
-                            for ($i = 0; $i < 12; $i++) {
-                                $sum += (int)$isbn13Base[$i] * (($i % 2 === 0) ? 1 : 3);
-                            }
-                            $checkDigit = (10 - ($sum % 10)) % 10;
-                            $externalIdentifier1 = $isbn13Base . $checkDigit;
-                        } else {
-                            $externalIdentifier1 = $externalIdentifier3;
-                        }
+                    // ISBNであれば$externalIdentifier1に設定 (ISBN-10 または ISBN-13)
+                    if (IsbnService::isValidIsbn($externalIdentifier3)) {
+                        $externalIdentifier1 = IsbnService::convertToIsbn13($externalIdentifier3);
+                        // 識別子にも同じものを設定
+                        // TODO: 同じものを設定するかは別途検討（モードで変更できる、別の発注なので同じものを注文したかも等）
+                        $identifier = $externalIdentifier1;
                     }
                 }
 
@@ -338,8 +309,7 @@ class AmazonImportService
                 }
 
                 // 同じIdentifierが存在するか確認
-                $existingItemByIdentifier = $this->entityManager->getRepository(Manifestation::class)
-                    ->findOneBy(['identifier' => $identifier]);
+                $existingItemByIdentifier = $repository->findOneBy(['identifier' => $identifier]);
 
                 if ($existingItemByIdentifier) {
                     $oldIdentifier = $identifier;
@@ -366,24 +336,49 @@ class AmazonImportService
                     }
                 }
 
+                // NDLからのインポート処理
+                $manifestation = null;
+                if ($this->useNdl && $externalIdentifier1 !== null) {
+                    try {
+                        $this->logger->info('NDLからのデータ取得を試行します', [
+                            'isbn' => $externalIdentifier1,
+                            'title' => $title
+                        ]);
+
+                        $manifestation = $this->ndlImportService->createManifestationByIsbn($externalIdentifier1);
+
+                    } catch (\Exception $e) {
+                        $this->logger->warning('NDLからのデータ取得中にエラーが発生しました', [
+                            'isbn' => $externalIdentifier1,
+                            'error' => $e->getMessage()
+                        ]);
+                    }
+                }
+
+                //
+                $price = $data[$priceIndex];
+
                 // Manifestationエンティティを作成
-                $manifestation = new Manifestation();
+                if ($manifestation === null) {
+                    $manifestation = new Manifestation();
+                }
                 $manifestation->setTitle($title);
                 $manifestation->setIdentifier($identifier);
                 $manifestation->setBuyer($buyer);
-                $manifestation->setRecordSource('Amazon購入履歴:'.$csvFilesWithoutPath);
+                $manifestation->setBuyerIdentifier($buyerIdentifier);
+                $manifestation->setRecordSource('Amazon購入履歴:' . $csvFilesWithoutPath);
                 $manifestation->setExternalIdentifier1($externalIdentifier1);
                 $manifestation->setExternalIdentifier3($externalIdentifier3);
-
                 if ($purchaseDate) {
                     $manifestation->setPurchaseDate($purchaseDate);
                 }
+                $manifestation->setPrice($price);
 
                 // データベースに保存
                 $this->entityManager->persist($manifestation);
                 $this->entityManager->flush();
                 
-                $this->logger->info('新しい書誌情報を登録しました', [
+                $this->logger->info('新しい情報を登録しました', [
                     'id' => $manifestation->getId(),
                     'title' => $title,
                     'identifier' => $identifier

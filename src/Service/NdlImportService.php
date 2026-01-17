@@ -16,13 +16,9 @@ class NdlImportService
         $this->entityManager = $entityManager;
     }
 
-    /**
-     * ISBN（生入力OK）からNDL検索→Manifestation作成→DB保存まで行う
-     * 見つからない/不正な場合はnull
-     */
-    public function importByIsbn(string $rawIsbn): ?Manifestation
+    public function createManifestationByIsbn(string $isbn): ?Manifestation
     {
-        $isbn = preg_replace('/[^0-9X]/', '', $rawIsbn) ?? '';
+        $isbn = preg_replace('/[^0-9X]/', '', $isbn) ?? '';
         if ($isbn === '') {
             return null;
         }
@@ -32,8 +28,18 @@ class NdlImportService
             return null;
         }
 
-        $manifestation = $this->ndlSearchService->createManifestation($bookData);
-
+        return $this->ndlSearchService->createManifestation($bookData);
+    }
+    /**
+     * ISBN（生入力OK）からNDL検索→Manifestation作成→DB保存まで行う
+     * 見つからない/不正な場合はnull
+     */
+    public function importByIsbn(string $rawIsbn): ?Manifestation
+    {
+        $manifestation = $this->createManifestationByIsbn($rawIsbn);
+        if ($manifestation === null) {
+            return null;
+        }
         $this->entityManager->persist($manifestation);
         $this->entityManager->flush();
 
