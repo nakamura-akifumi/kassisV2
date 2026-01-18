@@ -6,19 +6,15 @@
                 <th>{{ 'Model.Manifestation.fields.Identifier' | trans }}</th>
                 <th>{{ 'Model.Manifestation.fields.External_identifier1' | trans }}</th>
                 <th>{{ 'Model.Manifestation.fields.Purchase_date' | trans }}</th>
-                <th>{{ 'Model.actions.operation' | trans }}</th>
             </tr>
         </thead>
         <tbody>
         {% for manifestation in manifestations %}
             <tr>
-                <td>{{ manifestation.title }}</td>
+                <td><a href="{{ path('app_manifestation_show', {'id': manifestation.id}) }}">{{ manifestation.title }}</a></td>
                 <td>{{ manifestation.identifier }}</td>
                 <td>{{ manifestation.externalIdentifier1 }}</td>
                 <td>{{ manifestation.purchaseDate ? manifestation.purchaseDate|date('Y-m-d') : '' }}</td>
-                <td>
-                    <a href="{{ path('app_manifestation_show', {'id': manifestation.id}) }}">show</a>
-                </td>
             </tr>
         {% else %}
             <tr><td colspan="6">{{ 'Screen.Manifestation.NoRecordFound' | trans }}</td></tr>

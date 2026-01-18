@@ -47,7 +47,7 @@
             height: 100%;
             display: flex;
             flex-direction: column;
-            justify-content: center;
+            justify-content: flex-start;
             align-items: center;
             padding: 1rem;
         }
@@ -59,6 +59,40 @@
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
             border-radius: 4px;
             margin-bottom: 1rem;
+        }
+
+        .attachment-thumbnail {
+            width: 100%;
+            margin-top: 1rem;
+            border-top: 1px solid #eee;
+            padding-top: 1rem;
+        }
+
+        .attachment-thumbnail-item {
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        .attachment-thumbnail-item img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 4px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            border: 1px solid #dee2e6;
+        }
+
+        .attachment-thumbnail-item .pdf-link {
+            display: block;
+            padding: 1rem;
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            color: #dc3545;
+            text-decoration: none;
+        }
+
+        .attachment-thumbnail-item .pdf-link:hover {
+            background-color: #e9ecef;
         }
 
         .action-buttons {
@@ -102,7 +136,7 @@
             text-align: center;
             border-radius: 4px;
         }
-        
+
         .status-badge {
             display: inline-block;
             padding: 0.25rem 0.75rem;
@@ -113,32 +147,32 @@
             background-color: #6c757d;
             margin-right: 0.5rem;
         }
-        
+
         .status-active {
             background-color: #28a745;
         }
-        
+
         .status-inactive {
             background-color: #6c757d;
         }
-        
+
         .status-pending {
             background-color: #ffc107;
             color: #212529;
         }
-        
+
         .status-deleted {
             background-color: #dc3545;
         }
-        
+
         .status-sold {
             background-color: #17a2b8;
         }
-        
+
         .status-loaned {
             background-color: #6f42c1;
         }
-        
+
         .price-info {
             font-weight: 600;
             color: #e74c3c;
@@ -201,10 +235,6 @@
                 <div class="col-md-8">
                     <table class="detail-table">
                         <tbody>
-                        <tr>
-                            <th>{{ 'Model.Manifestation.fields.Id' | trans }}</th>
-                            <td>{{ manifestation.id }}</td>
-                        </tr>
                         <tr>
                             <th>{{ 'Model.Manifestation.fields.Title' | trans }}</th>
                             <td>{{ manifestation.title }}</td>
@@ -318,7 +348,7 @@
 
                     <div class="attachment-section">
                         <h4><i class="fas fa-paperclip"></i> 添付ファイル</h4>
-                        
+
                         {% if manifestation.attachments|length > 0 %}
                             <div class="mb-4">
                                 {% for attachment in manifestation.attachments %}
@@ -337,7 +367,7 @@
                                                 {{ attachment.fileName }}
                                             </a>
                                             <div class="attachment-meta">
-                                                {{ (attachment.fileSize / 1024)|number_format(1) }} KB | 
+                                                {{ (attachment.fileSize / 1024)|number_format(1) }} KB |
                                                 {{ attachment.createdAt|date('Y-m-d H:i') }}
                                             </div>
                                         </div>
@@ -398,7 +428,30 @@
                             <img id="bookCover" class="d-none" alt="{{ manifestation.title }}の書影">
                         </div>
                         <p class="text-muted small mt-2">ISBN: {{ manifestation.externalIdentifier1 }}</p>
-                        
+
+                            {# 添付資料のプレビュー表示エリア #}
+                            {% if manifestation.attachments|length > 0 %}
+                                <div class="attachment-thumbnail">
+                                    {% for attachment in manifestation.attachments %}
+                                        {% if 'image' in attachment.mimeType or 'pdf' in attachment.mimeType %}
+                                            <div class="attachment-thumbnail-item">
+                                                {% if 'image' in attachment.mimeType %}
+                                                    <a href="{{ asset(attachment.filePath) }}" target="_blank" title="{{ attachment.fileName }}">
+                                                        <img src="{{ asset(attachment.filePath) }}" alt="{{ attachment.fileName }}">
+                                                    </a>
+                                                {% elseif 'pdf' in attachment.mimeType %}
+                                                    <a href="{{ asset(attachment.filePath) }}" target="_blank" class="pdf-link">
+                                                        <i class="fas fa-file-pdf fa-3x"></i>
+                                                        <div class="small mt-2 text-dark">{{ attachment.fileName }}</div>
+                                                        <div class="badge bg-danger mt-1">PDFを開く</div>
+                                                    </a>
+                                                {% endif %}
+                                            </div>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
             </div>
