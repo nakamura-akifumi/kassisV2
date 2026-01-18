@@ -68,6 +68,8 @@ class NdlImportServiceTest extends KernelTestCase
         self::assertSame("メルヴィル 作 | 八木敏雄 訳", $manifestation->getContributor1());
         self::assertSame("岩波書店", $manifestation->getContributor2());
         self::assertSame("2004.8", $manifestation->getReleaseDateString());
+        self::assertSame("ndc9/933.6", $manifestation->getClass1());
+        self::assertNull($manifestation->getClass2());
 
         $isbn = '9784140811016';
         $manifestation = $service->importByIsbn($isbn);
@@ -81,6 +83,8 @@ class NdlImportServiceTest extends KernelTestCase
         self::assertSame("ビル・ブライソン 著 | 楡井浩一 訳", $manifestation->getContributor1());
         self::assertSame("日本放送出版協会", $manifestation->getContributor2());
         self::assertSame("2006.3", $manifestation->getReleaseDateString());
+        self::assertSame("ndc9/402", $manifestation->getClass1());
+        self::assertNull($manifestation->getClass2());
 
         $isbn = '9784805455425';
         $manifestation = $service->importByIsbn($isbn);
@@ -95,7 +99,8 @@ class NdlImportServiceTest extends KernelTestCase
         self::assertSame("新井洋行 さく | 小林ゆき子 え", $manifestation->getContributor1());
         self::assertSame("チャイルド本社", $manifestation->getContributor2());
         self::assertSame("2023.7", $manifestation->getReleaseDateString());
-
+        self::assertSame("ndc10/726.6", $manifestation->getClass1());
+        self::assertNull($manifestation->getClass2());
 
     }
 

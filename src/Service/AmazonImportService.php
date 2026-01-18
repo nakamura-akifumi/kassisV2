@@ -4,6 +4,7 @@ namespace App\Service;
 
 use App\Entity\Manifestation;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\Persistence\ManagerRegistry;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\String\Slugger\SluggerInterface;
@@ -12,6 +13,7 @@ use Symfony\Component\Uid\Uuid;
 class AmazonImportService
 {
     private EntityManagerInterface $entityManager;
+    private ManagerRegistry $managerRegistry;
     private string $projectDir;
     private LoggerInterface $logger;
     protected NdlImportService $ndlImportService;
@@ -21,11 +23,13 @@ class AmazonImportService
     public function __construct(
         NdlImportService $ndlImportService,
         EntityManagerInterface $entityManager,
+        ManagerRegistry $managerRegistry,
         LoggerInterface $logger,
         string $projectDir,
         bool $useNdl
     ) {
         $this->entityManager = $entityManager;
+        $this->managerRegistry = $managerRegistry;
         $this->logger = $logger;
         $this->projectDir = $projectDir;
         $this->ndlImportService = $ndlImportService;
@@ -237,6 +241,7 @@ class AmazonImportService
         }
 
         if ($titleIndex === false || $asinIndex === false) {
+            // Amazon CSVのヘッダーに必要なカラムが存在しない
             $this->logger->error('CSVファイルに必要なカラムが見つかりませんでした', [
                 'requiredColumns' => ['Title', 'ASIN'],
                 'foundColumns' => $headers
@@ -247,12 +252,20 @@ class AmazonImportService
             return $result;
         }
 
-        $repository = $this->entityManager->getRepository(Manifestation::class);
-
         // CSVファイルを行ごとに処理
         $rowCount = 0;
+        $batchSize = 20;
+
         while (($data = fgetcsv($handle)) !== false) {
             $rowCount++;
+
+            // EntityManagerが閉じている場合は再取得
+            if (!$this->entityManager->isOpen()) {
+                $this->entityManager = $this->managerRegistry->getManager();
+            }
+
+            $repository = $this->entityManager->getRepository(Manifestation::class);
+
             try {
                 // すでに同じ購入識別子が存在するか確認
                 $buyerIdentifier = $data[$orderIdIndex]."_".$data[$asinIndex];
@@ -269,6 +282,11 @@ class AmazonImportService
                 $title = $data[$titleIndex] ?? null;
                 if (empty($title)) {
                     $this->logger->debug('タイトルが空のため行をスキップします', ['row' => $rowCount]);
+                    $result['skipped']++;
+                    continue;
+                }
+                if ($title === "Not Applicable") {
+                    $this->logger->debug('タイトルが Not Applicable のため行をスキップします', ['row' => $rowCount]);
                     $result['skipped']++;
                     continue;
                 }
@@ -373,9 +391,13 @@ class AmazonImportService
                     $manifestation->setPurchaseDate($purchaseDate);
                 }
                 $manifestation->setPrice($price);
+                $manifestation->setStatus1('new');
 
                 // データベースに保存
                 $this->entityManager->persist($manifestation);
+
+                // バッチサイズごとにフラッシュするか、エラー復旧を容易にするため逐次処理を維持
+                // 今回はEntityManagerClosed対策を優先し、逐次flushしつつ、失敗時にリセットする構成にする
                 $this->entityManager->flush();
                 
                 $this->logger->info('新しい情報を登録しました', [
@@ -385,16 +407,31 @@ class AmazonImportService
                 ]);
                 
                 $result['success']++;
+
+                // メモリ節約のため定期的にクリア
+                if (($rowCount % $batchSize) === 0) {
+                    $this->entityManager->clear();
+                }
+
             } catch (\Exception $e) {
                 $this->logger->error('行の処理中にエラーが発生しました', [
                     'row' => $rowCount,
                     'error' => $e->getMessage(),
-                    'trace' => $e->getTraceAsString()
                 ]);
                 $result['errors']++;
                 $result['errorMessages'][] = '行の処理中にエラーが発生しました: ' . $e->getMessage();
+
+                // 重要：エラーが発生した場合は現在のトランザクションを破棄し、
+                // 次の行の処理のためにEntityManagerをリセットする必要がある
+                if (!$this->entityManager->isOpen()) {
+                    $this->managerRegistry->resetManager();
+                    $this->entityManager = $this->managerRegistry->getManager();
+                }
             }
         }
+
+        $this->entityManager->flush();
+        $this->entityManager->clear();
 
         $this->logger->info('CSVファイルの処理が完了しました', [
             'path' => $csvPath,

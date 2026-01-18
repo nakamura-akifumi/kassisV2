@@ -106,8 +106,10 @@ class AmazonImportServiceTest extends KernelTestCase
         $this->assertSame("日本図書センター", $manifestation->getContributor2());
         $this->assertSame("2023.7", $manifestation->getReleaseDateString());
         $this->assertSame("1430", $manifestation->getPrice());
-        $this->assertSame("active", $manifestation->getStatus1());
+        $this->assertSame("new", $manifestation->getStatus1());
         $this->assertNull($manifestation->getStatus2());
+        $this->assertSame("ndc10/726.6", $manifestation->getClass1());
+        $this->assertNull($manifestation->getClass2());
 
         $manifestation = $repository->findOneBy(["identifier" => "B07LC4PP28"]);
         $this->assertSame("BenQ GW2280 アイケア ウルトラスリムベゼルモニター (21.5インチ/フルHD/VA/輝度自動調整機能(B.I.)搭載/ブルーライト軽減/フリッカーフリー)", $manifestation->getTitle());
@@ -130,7 +132,7 @@ class AmazonImportServiceTest extends KernelTestCase
         $this->assertNull($manifestation->getContributor2());
         $this->assertNull($manifestation->getReleaseDateString());
         $this->assertSame("8975", $manifestation->getPrice());
-        $this->assertSame("active", $manifestation->getStatus1());
+        $this->assertSame("new", $manifestation->getStatus1());
         $this->assertNull($manifestation->getStatus2());
 
         // 再処理でスキップするのを確認する

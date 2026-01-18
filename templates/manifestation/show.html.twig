@@ -230,6 +230,22 @@
                             <td>{{ manifestation.externalIdentifier3 }}</td>
                         </tr>
                         <tr>
+                            <th>{{ 'Model.Manifestation.fields.Contributor1' | trans }}</th>
+                            <td>{{ manifestation.contributor1 }}</td>
+                        </tr>
+                        <tr>
+                            <th>{{ 'Model.Manifestation.fields.Contributor2' | trans }}</th>
+                            <td>{{ manifestation.contributor2 }}</td>
+                        </tr>
+                        <tr>
+                            <th>{{ 'Model.Manifestation.fields.Class1' | trans }}</th>
+                            <td>{{ manifestation.class1 }}</td>
+                        </tr>
+                        <tr>
+                            <th>{{ 'Model.Manifestation.fields.Class2' | trans }}</th>
+                            <td>{{ manifestation.class2 }}</td>
+                        </tr>
+                        <tr>
                             <th>{{ 'Model.Manifestation.fields.Description' | trans }}</th>
                             <td>{{ manifestation.description }}</td>
                         </tr>
@@ -252,18 +268,6 @@
                         <tr>
                             <th>{{ 'Model.Manifestation.fields.Price' | trans }}</th>
                             <td class="price-info">{{ manifestation.formattedPrice }}</td>
-                        </tr>
-                        <tr>
-                            <th>{{ 'Model.Manifestation.fields.Status1' | trans }}</th>
-                            <td>
-                                {{ manifestation.status1 }}
-                            </td>
-                        </tr>
-                        <tr>
-                            <th>{{ 'Model.Manifestation.fields.Status2' | trans }}</th>
-                            <td>
-                                {{ manifestation.status2 }}
-                            </td>
                         </tr>
                         <tr>
                             <th>{{ 'Model.Manifestation.fields.Type1' | trans }}</th>
@@ -290,12 +294,16 @@
                             <td>{{ manifestation.location2 }}</td>
                         </tr>
                         <tr>
-                            <th>{{ 'Model.Manifestation.fields.Contributor1' | trans }}</th>
-                            <td>{{ manifestation.contributor1 }}</td>
+                            <th>{{ 'Model.Manifestation.fields.Status1' | trans }}</th>
+                            <td>
+                                {{ manifestation.status1 }}
+                            </td>
                         </tr>
                         <tr>
-                            <th>{{ 'Model.Manifestation.fields.Contributor2' | trans }}</th>
-                            <td>{{ manifestation.contributor2 }}</td>
+                            <th>{{ 'Model.Manifestation.fields.Status2' | trans }}</th>
+                            <td>
+                                {{ manifestation.status2 }}
+                            </td>
                         </tr>
                         <tr>
                             <th>{{ 'Model.Manifestation.fields.RecordSource' | trans }}</th>

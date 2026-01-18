@@ -86,6 +86,12 @@ class ManifestationType extends AbstractType
             ->add('type4', null, [
                 'required' => false,
             ])
+            ->add('class1', null, [
+                'required' => false,
+            ])
+            ->add('class2', null, [
+                'required' => false,
+            ])
             ->add('location1', null, [
                 'required' => false,
             ])

@@ -18,10 +18,10 @@ class NdlSearchServiceTest extends TestCase
 
         $service = $this->getMockBuilder(NdlSearchService::class)
             ->setConstructorArgs([$httpClient, $logger, $entityManager])
-            ->onlyMethods(['searchByIsbn', 'createManifestation'])
+            ->onlyMethods(['searchByIsbnSru', 'createManifestation'])
             ->getMock();
 
-        $service->expects($this->never())->method('searchByIsbn');
+        $service->expects($this->never())->method('searchByIsbnSru');
         $service->expects($this->never())->method('createManifestation');
 
         $entityManager->expects($this->never())->method('persist');

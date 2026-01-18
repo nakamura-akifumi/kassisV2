@@ -7,6 +7,7 @@ Screen:
     Search: "書誌検索"
     Show: "詳細表示"
     Create: "新規登録"
+    NoRecordFound: "該当する情報が見つかりませんでした"
 Model:
   actions:
     search: "検索"
@@ -30,6 +31,8 @@ Model:
       Type2: "分類２"
       Type3: "分類３"
       Type4: "分類４"
+      Class1: "部類１"
+      Class2: "部類２"
       Location1: "場所１"
       Location2: "場所２"
       Contributor1: "貢献者１"
@@ -38,5 +41,6 @@ Model:
       Status2: "ステータス２"
       ReleaseDateString: "発売日"
       Price: "金額"
+      Extinfo: "拡張情報"
       CreatedAt: "作成日時"
       UpdatedAt: "更新日時"

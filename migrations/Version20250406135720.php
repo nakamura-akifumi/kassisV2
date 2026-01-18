@@ -37,6 +37,8 @@ final class Version20250406135720 extends AbstractMigration
                               type2 VARCHAR(255) DEFAULT NULL,
                               type3 VARCHAR(255) DEFAULT NULL,
                               type4 VARCHAR(255) DEFAULT NULL,
+                              class1 VARCHAR(32) DEFAULT NULL,
+                              class2 VARCHAR(32) DEFAULT NULL,
                               location1 VARCHAR(255) DEFAULT NULL,
                               location2 VARCHAR(255) DEFAULT NULL,
                               contributor1 VARCHAR(255) DEFAULT NULL,
@@ -45,6 +47,7 @@ final class Version20250406135720 extends AbstractMigration
                               price DECIMAL(11,2) DEFAULT NULL,
                               status1 VARCHAR(16) NOT NULL,
                               status2 VARCHAR(16) DEFAULT NULL,
+                              extinfo LONGTEXT DEFAULT NULL,
                               created_at DATETIME NOT NULL,
                               updated_at DATETIME NOT NULL,
                               PRIMARY KEY(id)) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci ENGINE = InnoDB;

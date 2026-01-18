@@ -36,6 +36,7 @@ class FileService
                 'description',
                 'buyer','buyer_identifier','purchase_date','record_source',
                 'type1','type2','type3','type4',
+                'class1','class2','extinfo',
                 'location1','location2', 'contributor1','contributor2',
                 'release_date_string',
                 'status1','status2','price',
@@ -71,6 +72,9 @@ class FileService
             'type2' => ['label' => $this->t->trans('Model.Manifestation.fields.Type2'), 'getter' => 'getType2'],
             'type3' => ['label' => $this->t->trans('Model.Manifestation.fields.Type3'), 'getter' => 'getType3'],
             'type4' => ['label' => $this->t->trans('Model.Manifestation.fields.Type4'), 'getter' => 'getType4'],
+            'class1' => ['label' => $this->t->trans('Model.Manifestation.fields.Class1'), 'getter' => 'getClass1'],
+            'class2' => ['label' => $this->t->trans('Model.Manifestation.fields.Class2'), 'getter' => 'getClass2'],
+            'extinfo' => ['label' => $this->t->trans('Model.Manifestation.fields.Extinfo'), 'getter' => 'getExtinfo'],
             'location1' => ['label' => $this->t->trans('Model.Manifestation.fields.Location1'), 'getter' => 'getLocation1'],
             'location2' => ['label' => $this->t->trans('Model.Manifestation.fields.Location2'), 'getter' => 'getLocation2'],
             'contributor1' => ['label' => $this->t->trans('Model.Manifestation.fields.Contributor1'), 'getter' => 'getContributor1'],
@@ -303,6 +307,15 @@ class FileService
                     if (isset($cellvals['type4'])) {
                         $manifestation->setType4($cellvals['type4']);
                     }
+                    if (isset($cellvals['class1'])) {
+                        $manifestation->setClass1($cellvals['class1']);
+                    }
+                    if (isset($cellvals['class2'])) {
+                        $manifestation->setClass2($cellvals['class2']);
+                    }
+                    if (isset($cellvals['extinfo'])) {
+                        $manifestation->setExtinfo($cellvals['extinfo']);
+                    }
                     if (isset($cellvals['location1'])) {
                         $manifestation->setLocation1($cellvals['location1']);
                     }
@@ -387,6 +400,9 @@ class FileService
             if ($label === $this->t->trans('Model.Manifestation.fields.Type2')) $map['type2'] = $col;
             if ($label === $this->t->trans('Model.Manifestation.fields.Type3')) $map['type3'] = $col;
             if ($label === $this->t->trans('Model.Manifestation.fields.Type4')) $map['type4'] = $col;
+            if ($label === $this->t->trans('Model.Manifestation.fields.Class1')) $map['class1'] = $col;
+            if ($label === $this->t->trans('Model.Manifestation.fields.Class2')) $map['class2'] = $col;
+            if ($label === $this->t->trans('Model.Manifestation.fields.Extinfo')) $map['extinfo'] = $col;
             if ($label === $this->t->trans('Model.Manifestation.fields.Location1')) $map['location1'] = $col;
             if ($label === $this->t->trans('Model.Manifestation.fields.Location2')) $map['location2'] = $col;
             if ($label === $this->t->trans('Model.Manifestation.fields.Contributor1')) $map['contributor1'] = $col;

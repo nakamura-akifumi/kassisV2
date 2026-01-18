@@ -85,7 +85,16 @@ class Manifestation
     #[ORM\Column(type: Types::DECIMAL, precision: 11, scale: 2, nullable: true)]
     private ?string $price = null;
 
-    #[ORM\Column(length: 16)]
+    #[ORM\Column(length: 32, nullable: true)]
+    private ?string $class1 = null;
+
+    #[ORM\Column(length: 32, nullable: true)]
+    private ?string $class2 = null;
+
+    #[ORM\Column(type: 'text', nullable: true)]
+    private ?string $extinfo = null;
+
+    #[ORM\Column]
     private string $status1 = 'active';
 
     #[ORM\Column(length: 16, nullable: true)]
@@ -341,13 +350,56 @@ class Manifestation
         return $this->price;
     }
 
-    public function setPrice(?string $price): static
+    public function setPrice($price): self
     {
-        $this->price = $price;
+        if (is_string($price)) {
+            // カンマや通貨記号を除去し、数値のみにする
+            $price = str_replace([',', '￥', '¥'], '', $price);
+            $price = filter_var($price, FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
+        }
+
+        $this->price = $price !== '' && $price !== null ? (string)$price : null;
+
         return $this;
     }
 
-    public function getStatus1(): string
+    public function getClass1(): ?string
+    {
+        return $this->class1;
+    }
+
+    public function setClass1(?string $class1): static
+    {
+        $this->class1 = $class1;
+
+        return $this;
+    }
+
+    public function getClass2(): ?string
+    {
+        return $this->class2;
+    }
+
+    public function setClass2(?string $class2): static
+    {
+        $this->class2 = $class2;
+
+        return $this;
+    }
+
+    public function getExtinfo(): ?string
+    {
+        return $this->extinfo;
+    }
+
+    public function setExtinfo(?string $extinfo): static
+    {
+        $this->extinfo = $extinfo;
+
+        return $this;
+    }
+
+    public function getStatus1(): ?string
     {
         return $this->status1;
     }
