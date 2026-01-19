@@ -217,7 +217,7 @@ class AmazonImportService
         // Amazon CSVのヘッダーを確認
         if (in_array($csvFilesWithoutPath, $needDigitalFiles)) {
             // KINDLE
-            $purchaseType = "Digital";
+            $materialType = "Digital";
             $titleIndex = array_search('ProductName', $headers);
             $asinIndex = array_search('ASIN', $headers);
             $buyerIndex = array_search('Marketplace', $headers);
@@ -225,9 +225,10 @@ class AmazonImportService
             $orderIdIndex = array_search('Order ID', $headers);
             //$QuantityIndex = array_search('Quantity', $headers);
             $priceIndex = array_search('Total Owed', $headers);
+            $contributor2Index = array_search('SellerOfRecord', $headers);
         } elseif (in_array($csvFilesWithoutPath, $needRetailFiles)) {
             // Retail
-            $purchaseType = "Retail";
+            $materialType = "Retail";
             $titleIndex = array_search('Product Name', $headers);
             $asinIndex = array_search('ASIN', $headers);
             $buyerIndex = array_search('Website', $headers);
@@ -235,6 +236,7 @@ class AmazonImportService
             $orderIdIndex = array_search('Order ID', $headers);
             //$QuantityIndex = array_search('Quantity', $headers);
             $priceIndex = array_search('Total Owed', $headers);
+            $contributor2Index = null;
         } else {
             $this->logger->debug('処理対象外のファイルです。'.$csvFilesWithoutPath);
             return $result;
@@ -375,6 +377,9 @@ class AmazonImportService
 
                 //
                 $price = $data[$priceIndex];
+                if ($contributor2Index !== false && !empty($data[$contributor2Index])) {
+                    $contributor2 = $data[$contributor2Index];
+                }
 
                 // Manifestationエンティティを作成
                 if ($manifestation === null) {
@@ -392,6 +397,9 @@ class AmazonImportService
                 }
                 $manifestation->setPrice($price);
                 $manifestation->setStatus1('new');
+                if ($contributor2 !== null) {
+                    $manifestation->setContributor2($contributor2);
+                }
 
                 // データベースに保存
                 $this->entityManager->persist($manifestation);

@@ -21,18 +21,52 @@
         {% endfor %}
         </tbody>
     </table>
-{% elseif view_mode == 'panel' %}
-    <div class="panel-container">
-        {% for manifestation in manifestations %}
-            <div class="panel-item">
-                <div class="fw-bold">{{ manifestation.title }}</div>
-                <small class="text-muted">{{ manifestation.identifier }}</small>
-                <div class="mt-2">
-                    <a href="{{ path('app_manifestation_show', {'id': manifestation.id}) }}" class="btn btn-sm btn-outline-primary">詳細</a>
-                </div>
+    {% elseif view_mode == 'panel' %}
+        {% if manifestations|length > 20 %}
+            <div class="alert alert-info py-2 mb-3">
+                <i class="fas fa-info-circle"></i> 検索結果が20件を超えています。最初の20件のみ表示しています。全件確認するにはリスト表示をご利用ください。
             </div>
-        {% else %}
-            <p>no records found</p>
-        {% endfor %}
-    </div>
-{% endif %}
+        {% endif %}
+        <div class="panel-container">
+            {% for manifestation in manifestations|slice(0, 20) %}
+                <a href="{{ path('app_manifestation_show', {'id': manifestation.id}) }}" class="panel-item text-decoration-none text-dark">
+                    <div class="panel-image-container">
+                        {% set first_image = null %}
+                        {% for attachment in manifestation.attachments %}
+                            {% if first_image is null and 'image' in attachment.mimeType %}
+                                {% set first_image = asset(attachment.filePath) %}
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if manifestation.externalIdentifier1 %}
+                            {# ISBNがある場合はNDLの書影を試みる #}
+                            <img src="https://iss.ndl.go.jp/thumbnail/{{ manifestation.externalIdentifier1|replace({'-': ''}) }}" 
+                                 alt="{{ manifestation.title }}"
+                                 id="img-isbn-{{ manifestation.id }}"
+                                 onerror="this.style.display='none'; const fallback = document.getElementById('img-fallback-{{ manifestation.id }}'); if(fallback) fallback.classList.remove('d-none');">
+                            
+                            {# NDLが失敗した時のための添付画像（初期状態は非表示） #}
+                            {% if first_image %}
+                                <img src="{{ first_image }}" alt="{{ manifestation.title }}" 
+                                     id="img-fallback-{{ manifestation.id }}" class="d-none">
+                            {% else %}
+                                <div id="img-fallback-{{ manifestation.id }}" class="d-none">
+                                    <i class="fas fa-book fa-3x text-light-emphasis"></i>
+                                </div>
+                            {% endif %}
+                        {% elseif first_image %}
+                            {# ISBNがなく、添付画像がある場合 #}
+                            <img src="{{ first_image }}" alt="{{ manifestation.title }}">
+                        {% else %}
+                            {# 何もない場合 #}
+                            <i class="fas fa-book fa-3x text-light-emphasis"></i>
+                        {% endif %}
+                    </div>
+                    <div class="fw-bold text-truncate" title="{{ manifestation.title }}">{{ manifestation.title }}</div>
+                    <small class="text-muted">{{ manifestation.identifier }}</small>
+                </a>
+            {% else %}
+                <p>{{ 'Screen.Manifestation.NoRecordFound' | trans }}</p>
+            {% endfor %}
+        </div>
+    {% endif %}

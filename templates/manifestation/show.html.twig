@@ -420,17 +420,19 @@
 
                 <div class="col-md-4">
                     <div class="book-cover">
-                        <div id="coverContainer">
-                            <div class="loading-spinner" id="coverLoading"></div>
-                            <div class="cover-fallback d-none" id="coverFallback">
-                                <p>書影が見つかりませんでした</p>
+                        {% if manifestation.externalIdentifier1 %}
+                            <div id="coverContainer">
+                                <div class="loading-spinner" id="coverLoading"></div>
+                                <div class="cover-fallback d-none" id="coverFallback">
+                                    <p>書影が見つかりませんでした</p>
+                                </div>
+                                <img id="bookCover" class="d-none" alt="{{ manifestation.title }}の書影">
                             </div>
-                            <img id="bookCover" class="d-none" alt="{{ manifestation.title }}の書影">
-                        </div>
-                        <p class="text-muted small mt-2">ISBN: {{ manifestation.externalIdentifier1 }}</p>
+                            <p class="text-muted small mt-2">ISBN: {{ manifestation.externalIdentifier1 }}</p>
+                        {% endif %}
 
-                            {# 添付資料のプレビュー表示エリア #}
-                            {% if manifestation.attachments|length > 0 %}
+                        {# 添付資料のプレビュー表示エリア #}
+                        {% if manifestation.attachments|length > 0 %}
                                 <div class="attachment-thumbnail">
                                     {% for attachment in manifestation.attachments %}
                                         {% if 'image' in attachment.mimeType or 'pdf' in attachment.mimeType %}

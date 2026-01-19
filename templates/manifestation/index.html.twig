@@ -7,8 +7,10 @@
     <style>
         .view-mode-buttons .btn.active { background-color: #007bff; color: white; }
         .panel-container { display: flex; flex-wrap: wrap; gap: 20px; }
-        .panel-item { width: calc(20% - 16px); text-align: center; border: 1px solid #ddd; padding: 10px; border-radius: 8px; }
-        .panel-item img { max-width: 100%; height: auto; margin-bottom: 8px; }
+        .panel-item { width: calc(25% - 15px); text-align: center; border: 1px solid #ddd; padding: 10px; border-radius: 8px; transition: background-color 0.2s, transform 0.2s; display: block; }
+        .panel-item:hover { background-color: #f8f9fa; border-color: #007bff; transform: translateY(-2px); text-decoration: none; }
+        .panel-item .panel-image-container { width: 100%; height: 180px; display: flex; justify-content: center; align-items: center; margin-bottom: 10px; background-color: #f1f3f5; border-radius: 4px; overflow: hidden; }
+        .panel-item img { max-width: 100%; max-height: 100%; object-fit: contain; }
         #grid-container { width: 100%; height: 600px; border: 1px solid #ddd; }
     </style>
 {% endblock %}
@@ -63,7 +65,10 @@
                         </button>
                     </div>
                 </div>
-                <div>
+                <div class="d-flex align-items-center">
+                    <span class="badge bg-secondary me-3" id="result-count">
+                            検索結果: {{ manifestations|length }} 件
+                    </span>
                     <button type="button" id="btn-export" class="btn btn-outline-success">
                         <i class="fas fa-file-export"></i> エクスポート
                     </button>
