@@ -466,45 +466,38 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const isbn = "{{ manifestation.externalIdentifier1 }}";
-            if (isbn) {
-                checkAndLoadBookCover(isbn);
-            } else {
-                showFallback();
-            }
-
-            function checkAndLoadBookCover(isbn) {
-                // ISBNから"-"（ハイフン）を削除
-                const cleanIsbn = isbn.replace(/-/g, '');
-
-                // NDL書影APIのURL
-                const ndlUrl = `https://iss.ndl.go.jp/thumbnail/${cleanIsbn}`;
-
-                // 画像要素を直接作成して状態を確認する方法
-                const img = document.getElementById('bookCover');
-
-                // 画像の読み込みエラーのイベントリスナー
-                img.onerror = function() {
+                if (isbn) {
+                    checkAndLoadBookCover(isbn);
+                } else {
                     showFallback();
-                };
+                }
 
-                // 画像の読み込み成功のイベントリスナー
-                img.onload = function() {
-                    document.getElementById('coverLoading').classList.add('d-none');
-                    img.classList.remove('d-none');
-                };
+                function checkAndLoadBookCover(isbn) {
+                    const cleanIsbn = isbn.replace(/-/g, '');
+                    const googleUrl = `https://www.googleapis.com/books/v1/volumes?q=isbn:${cleanIsbn}`;
 
-                // CORSポリシーを回避するために、直接画像を読み込む
-                img.src = ndlUrl;
+                    fetch(googleUrl)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.totalItems > 0 && data.items[0].volumeInfo.imageLinks) {
+                                const imgUrl = data.items[0].volumeInfo.imageLinks.thumbnail.replace('http:', 'https:');
+                                const img = document.getElementById('bookCover');
+                                img.src = imgUrl;
+                                img.onload = function() {
+                                    document.getElementById('coverLoading').classList.add('d-none');
+                                    img.classList.remove('d-none');
+                                };
+                            } else {
+                                showFallback();
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Google Books API Error:', error);
+                            showFallback();
+                        });
+                }
 
-                // 5秒後にも画像が読み込まれていない場合はフォールバック表示
-                setTimeout(function() {
-                    if (img.naturalWidth === 0) {
-                        showFallback();
-                    }
-                }, 5000);
-            }
-
-            function showFallback() {
+                function showFallback() {
                 document.getElementById('coverLoading').classList.add('d-none');
                 document.getElementById('coverFallback').classList.remove('d-none');
                 document.getElementById('bookCover').classList.add('d-none');

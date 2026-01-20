@@ -1,4 +1,9 @@
 {% if (view_mode|default('list')) == 'list' %}
+    {% if manifestations|length > 50 %}
+        <div class="alert alert-info py-2 mb-3">
+            <i class="fas fa-info-circle"></i> 検索結果が50件を超えています。最初の50件のみ表示しています。
+        </div>
+    {% endif %}
     <table class="table">
         <thead>
             <tr>
@@ -9,7 +14,7 @@
             </tr>
         </thead>
         <tbody>
-        {% for manifestation in manifestations %}
+        {% for manifestation in manifestations|slice(0, 50) %}
             <tr>
                 <td><a href="{{ path('app_manifestation_show', {'id': manifestation.id}) }}">{{ manifestation.title }}</a></td>
                 <td>{{ manifestation.identifier }}</td>
@@ -17,56 +22,88 @@
                 <td>{{ manifestation.purchaseDate ? manifestation.purchaseDate|date('Y-m-d') : '' }}</td>
             </tr>
         {% else %}
-            <tr><td colspan="6">{{ 'Screen.Manifestation.NoRecordFound' | trans }}</td></tr>
+            <tr><td colspan="4">{{ 'Screen.Manifestation.NoRecordFound' | trans }}</td></tr>
         {% endfor %}
         </tbody>
     </table>
-    {% elseif view_mode == 'panel' %}
-        {% if manifestations|length > 20 %}
-            <div class="alert alert-info py-2 mb-3">
-                <i class="fas fa-info-circle"></i> 検索結果が20件を超えています。最初の20件のみ表示しています。全件確認するにはリスト表示をご利用ください。
-            </div>
-        {% endif %}
-        <div class="panel-container">
-            {% for manifestation in manifestations|slice(0, 20) %}
-                <a href="{{ path('app_manifestation_show', {'id': manifestation.id}) }}" class="panel-item text-decoration-none text-dark">
-                    <div class="panel-image-container">
-                        {% set first_image = null %}
-                        {% for attachment in manifestation.attachments %}
-                            {% if first_image is null and 'image' in attachment.mimeType %}
-                                {% set first_image = asset(attachment.filePath) %}
-                            {% endif %}
-                        {% endfor %}
-
-                        {% if manifestation.externalIdentifier1 %}
-                            {# ISBNがある場合はNDLの書影を試みる #}
-                            <img src="https://iss.ndl.go.jp/thumbnail/{{ manifestation.externalIdentifier1|replace({'-': ''}) }}" 
-                                 alt="{{ manifestation.title }}"
-                                 id="img-isbn-{{ manifestation.id }}"
-                                 onerror="this.style.display='none'; const fallback = document.getElementById('img-fallback-{{ manifestation.id }}'); if(fallback) fallback.classList.remove('d-none');">
-                            
-                            {# NDLが失敗した時のための添付画像（初期状態は非表示） #}
-                            {% if first_image %}
-                                <img src="{{ first_image }}" alt="{{ manifestation.title }}" 
-                                     id="img-fallback-{{ manifestation.id }}" class="d-none">
-                            {% else %}
-                                <div id="img-fallback-{{ manifestation.id }}" class="d-none">
-                                    <i class="fas fa-book fa-3x text-light-emphasis"></i>
-                                </div>
-                            {% endif %}
-                        {% elseif first_image %}
-                            {# ISBNがなく、添付画像がある場合 #}
-                            <img src="{{ first_image }}" alt="{{ manifestation.title }}">
-                        {% else %}
-                            {# 何もない場合 #}
-                            <i class="fas fa-book fa-3x text-light-emphasis"></i>
-                        {% endif %}
-                    </div>
-                    <div class="fw-bold text-truncate" title="{{ manifestation.title }}">{{ manifestation.title }}</div>
-                    <small class="text-muted">{{ manifestation.identifier }}</small>
-                </a>
-            {% else %}
-                <p>{{ 'Screen.Manifestation.NoRecordFound' | trans }}</p>
-            {% endfor %}
+{% elseif view_mode == 'panel' %}
+    {% if manifestations|length > 20 %}
+        <div class="alert alert-info py-2 mb-3">
+            <i class="fas fa-info-circle"></i> 検索結果が20件を超えています。最初の20件のみ表示しています。全件確認するにはリスト表示をご利用ください。
         </div>
     {% endif %}
+    <div class="panel-container">
+        {% for manifestation in manifestations|slice(0, 20) %}
+            <a href="{{ path('app_manifestation_show', {'id': manifestation.id}) }}" class="panel-item text-decoration-none text-dark">
+                <div class="panel-image-container">
+                    {% set first_image = null %}
+                    {% for attachment in manifestation.attachments %}
+                        {% if first_image is null and 'image' in attachment.mimeType %}
+                            {% set first_image = asset(attachment.filePath) %}
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if manifestation.externalIdentifier1 %}
+                        {# 初期状態はローディングか非表示、JSでURLをセットする #}
+                        <img src="" alt="{{ manifestation.title }}" 
+                             id="img-isbn-{{ manifestation.id }}" 
+                             data-isbn="{{ manifestation.externalIdentifier1|replace({'-': ''}) }}"
+                             class="d-none manifestation-panel-img">
+                        
+                        {# フォールバック（添付画像またはアイコン） #}
+                        <div id="img-fallback-{{ manifestation.id }}" class="{{ first_image ? '' : 'd-flex align-items-center justify-content-center h-100' }}">
+                            {% if first_image %}
+                                <img src="{{ first_image }}" alt="{{ manifestation.title }}">
+                            {% else %}
+                                <i class="fas fa-book fa-3x text-light-emphasis"></i>
+                            {% endif %}
+                        </div>
+                    {% elseif first_image %}
+                        <img src="{{ first_image }}" alt="{{ manifestation.title }}">
+                    {% else %}
+                        <i class="fas fa-book fa-3x text-light-emphasis"></i>
+                    {% endif %}
+                </div>
+                <div class="fw-bold text-truncate" title="{{ manifestation.title }}">{{ manifestation.title }}</div>
+                <small class="text-muted">{{ manifestation.identifier }}</small>
+            </a>
+        {% endfor %}
+    </div>
+
+    <script>
+        (function() {
+            const loadPanelImages = () => {
+                document.querySelectorAll('.manifestation-panel-img').forEach(img => {
+                    const isbn = img.getAttribute('data-isbn');
+                    const id = img.id.replace('img-isbn-', '');
+                    const fallback = document.getElementById('img-fallback-' + id);
+
+                    if (!isbn) return;
+
+                    fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.totalItems > 0 && data.items && data.items[0].volumeInfo.imageLinks && data.items[0].volumeInfo.imageLinks.thumbnail) {
+                                const imgUrl = data.items[0].volumeInfo.imageLinks.thumbnail.replace('http:', 'https:');
+                                img.src = imgUrl;
+                                img.onload = () => {
+                                    if (img.naturalWidth > 1) {
+                                        img.classList.remove('d-none');
+                                        if (fallback) fallback.classList.add('d-none');
+                                    }
+                                };
+                            }
+                        })
+                        .catch(err => console.error('Google Books API Error for ' + isbn, err));
+                });
+            };
+            
+            // DOMContentLoaded または即時実行（AJAX読み込み対応）
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', loadPanelImages);
+            } else {
+                loadPanelImages();
+            }
+        })();
+    </script>
+{% endif %}
