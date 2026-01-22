@@ -13,51 +13,13 @@ class ManifestationRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, Manifestation::class);
     }
-    
-    public function findBySearchCriteria(?string $title = null, ?string $author = null, ?string $publisher = null, ?string $isbn = null)
-    {
-        $queryBuilder = $this->createQueryBuilder('m');
-        
-        if ($title) {
-            $queryBuilder
-                ->andWhere('m.title LIKE :title')
-                ->setParameter('title', '%' . $title . '%');
-        }
-        
-        if ($author) {
-            $queryBuilder
-                ->andWhere('m.contributor1 LIKE :author')
-                ->setParameter('author', '%' . $author . '%');
-        }
-
-        if ($publisher) {
-            $queryBuilder
-                ->andWhere('m.contributor2 LIKE :publisher')
-                ->setParameter('publisher', '%' . $publisher . '%');
-        }
-
-        if ($isbn) {
-            $queryBuilder
-                ->andWhere('m.external_identifier1 LIKE :isbn')
-                ->setParameter('isbn', '%' . $isbn . '%');
-        }
-        
-        return $queryBuilder
-            ->orderBy('m.id', 'ASC')
-            ->getQuery()
-            ->getResult();
-    }
 
     public function advancedSearch(
         ?string $q,
-        ?string $title,
         ?string $identifier,
         ?string $external_id1,
-        ?string $external_id2,
-        ?string $external_id3,
-        ?string $description,
-        ?string $purchase_date_from,
-        ?string $purchase_date_to
+        ?string $type1,
+        ?string $type2,
     ) {
         $qb = $this->createQueryBuilder('m');
 
@@ -86,11 +48,6 @@ class ManifestationRepository extends ServiceEntityRepository
             }
         }
 
-        if ($title) {
-            $qb->andWhere('m.title LIKE :title')
-                ->setParameter('title', '%' . $title . '%');
-        }
-
         if ($identifier) {
             $qb->andWhere('m.identifier LIKE :identifier')
                 ->setParameter('identifier', '%' . $identifier . '%');
@@ -101,21 +58,16 @@ class ManifestationRepository extends ServiceEntityRepository
                 ->setParameter('external_id1', '%' . $external_id1 . '%');
         }
 
-        if ($external_id2) {
-            $qb->andWhere('m.external_identifier2 LIKE :external_id2')
-                ->setParameter('external_id2', '%' . $external_id2 . '%');
+        if ($type1) {
+            $qb->andWhere('m.description = :type1')
+                ->setParameter('type1', $type1);
         }
 
-        if ($external_id3) {
-            $qb->andWhere('m.external_identifier3 LIKE :external_id3')
-                ->setParameter('external_id3', '%' . $external_id3 . '%');
+        if ($type2) {
+            $qb->andWhere('m.description = :type2')
+                ->setParameter('type2', $type2);
         }
-
-        if ($description) {
-            $qb->andWhere('m.description LIKE :description')
-                ->setParameter('description', '%' . $description . '%');
-        }
-
+/*
         if ($purchase_date_from) {
             $qb->andWhere('m.purchase_date >= :purchase_date_from')
                 ->setParameter('purchase_date_from', $purchase_date_from);
@@ -125,7 +77,7 @@ class ManifestationRepository extends ServiceEntityRepository
             $qb->andWhere('m.purchase_date <= :purchase_date_to')
                 ->setParameter('purchase_date_to', $purchase_date_to);
         }
-
+*/
         return $qb->orderBy('m.id', 'ASC')
             ->getQuery()
             ->getResult();
@@ -142,14 +94,10 @@ class ManifestationRepository extends ServiceEntityRepository
 
         $results = $this->advancedSearch(
             $query->q,
-            $query->title,
             $query->identifier,
             $query->externalId1,
-            $query->externalId2,
-            $query->externalId3,
-            $query->description,
-            $query->purchaseDateFrom,
-            $query->purchaseDateTo
+            $query->type1,
+            $query->type2,
         );
 
         // 複数行入力（識別子リスト）の場合は、入力順に並べ替える

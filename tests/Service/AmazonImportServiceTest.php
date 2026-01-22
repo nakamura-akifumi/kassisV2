@@ -47,9 +47,52 @@ class AmazonImportServiceTest extends KernelTestCase
         $this->entityManager->flush();
     }
 
+    public function testProcessFileIsbnOnly(): void
+    {
+        // テスト用ファイルのパス（オリジナル）
+        // デジタル5件(うち 1件 Not Applicable）、リテール6件（うち4件ISBNあり）
+        $originalZipPath = $this->projectDir . '/tests/resources/amazon_orders_test1.zip';
+
+        if (!file_exists($originalZipPath)) {
+            $this->markTestSkipped('テスト用の ZIP ファイルが見つかりません: ' . $originalZipPath);
+        }
+
+        // サービス側でファイルを move/delete してしまうため、一時的なコピーを作成する
+        $zipPath = tempnam(sys_get_temp_dir(), 'amazon_test_');
+        copy($originalZipPath, $zipPath);
+
+        // UploadedFile をシミュレート（コピーしたパスを使用）
+        $uploadedFile = new UploadedFile(
+            $zipPath,
+            'amazon_orders_test1.zip',
+            'application/zip',
+            null,
+            true // テストモード
+        );
+
+        // 実行
+        $result = $this->amazonImportService->processFile($uploadedFile, true);
+
+        // アサーション
+        $this->assertArrayHasKey('success', $result);
+        $this->assertArrayHasKey('skipped', $result);
+        $this->assertArrayHasKey('errors', $result);
+        $this->assertEquals(4, $result['success'], '4件のインポートに成功する必要があります。');
+        $this->assertEquals(7, $result['skipped'], '7件のスキップが発生します。');
+        $this->assertEquals(0, $result['errors'], 'エラーが発生してはいけません。');
+
+        // データベースに保存されているか確認
+        $repository = $this->entityManager->getRepository(Manifestation::class);
+
+        $manifestations = $repository->findAll();
+        $this->assertCount($result['success'], $manifestations);
+
+    }
+
     public function testProcessFileWithRealZip(): void
     {
         // テスト用ファイルのパス（オリジナル）
+        // デジタル5件（うちスキップ1）、リテール6件（うち4件ISBNあり）
         $originalZipPath = $this->projectDir . '/tests/resources/amazon_orders_test1.zip';
 
         if (!file_exists($originalZipPath)) {
@@ -76,7 +119,8 @@ class AmazonImportServiceTest extends KernelTestCase
         $this->assertArrayHasKey('success', $result);
         $this->assertArrayHasKey('skipped', $result);
         $this->assertArrayHasKey('errors', $result);
-        $this->assertEquals(6, $result['success'], '6件のインポートに成功する必要があります。');
+        $this->assertEquals(10, $result['success'], '6件のインポートに成功する必要があります。');
+        $this->assertEquals(1, $result['skipped'], '1件のスキップが発生します。');
         $this->assertEquals(0, $result['errors'], 'エラーが発生してはいけません。');
 
         // データベースに保存されているか確認
@@ -154,7 +198,7 @@ class AmazonImportServiceTest extends KernelTestCase
         $this->assertArrayHasKey('skipped', $result);
         $this->assertArrayHasKey('errors', $result);
         $this->assertEquals(0, $result['success'], '0件のインポートに成功する必要があります。');
-        $this->assertEquals(6, $result['skipped'], '6件のインポートにスキップする必要があります。');
+        $this->assertEquals(11, $result['skipped'], '11件のインポートにスキップする必要があります。');
         $this->assertEquals(0, $result['errors'], 'エラーが発生してはいけません。');
     }
 

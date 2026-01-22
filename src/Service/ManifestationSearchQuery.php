@@ -4,24 +4,17 @@ namespace App\Service;
 
 class ManifestationSearchQuery
 {
-    public function __construct(
-        public readonly ?string $q = null,
-        public readonly ?string $title = null,
-        public readonly ?string $identifier = null,
-        public readonly ?string $externalId1 = null,
-        public readonly ?string $externalId2 = null,
-        public readonly ?string $externalId3 = null,
-        public readonly ?string $description = null,
-        public readonly ?string $purchaseDateFrom = null,
-        public readonly ?string $purchaseDateTo = null,
-    ) {
-    }
+    public ?string $q = null;
+    public ?string $identifier = null;
+    public ?string $externalId1 = null;
+    public ?string $type1 = null;
+    public ?string $type2 = null;
+    public string $mode = 'simple'; // 'simple', 'multi', 'advanced'
 
     public function hasSearchCriteria(): bool
     {
-        return $this->q || $this->title || $this->identifier || $this->externalId1 
-            || $this->externalId2 || $this->externalId3 || $this->description 
-            || $this->purchaseDateFrom || $this->purchaseDateTo;
+        return $this->q || $this->identifier || $this->externalId1
+            || $this->type1 || $this->type2;
     }
 
     public function isMultiLine(): bool
@@ -29,18 +22,16 @@ class ManifestationSearchQuery
         return $this->q !== null && str_contains($this->q, "\n");
     }
 
-    public static function fromRequest(array $query): self
+    public static function fromRequest(array $params): self
     {
-        return new self(
-            q: $query['q'] ?? null,
-            title: $query['title'] ?? null,
-            identifier: $query['identifier'] ?? null,
-            externalId1: $query['external_id1'] ?? null,
-            externalId2: $query['external_id2'] ?? null,
-            externalId3: $query['external_id3'] ?? null,
-            description: $query['description'] ?? null,
-            purchaseDateFrom: $query['purchase_date_from'] ?? null,
-            purchaseDateTo: $query['purchase_date_to'] ?? null,
-        );
+        $query = new self();
+        $query->q = $params['q'] ?? null;
+        $query->identifier = $params['identifier'] ?? null;
+        $query->externalId1 = $params['external_identifier1'] ?? null;
+        $query->type1 = $params['type1'] ?? null;
+        $query->type2 = $params['type2'] ?? null;
+        $query->mode = $params['mode'] ?? 'simple';
+
+        return $query;
     }
 }

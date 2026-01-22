@@ -23,7 +23,7 @@
                     </p>
                 </div>
 
-                {{ form_start(form, {'attr': {'class': 'needs-validation'}}) }}
+                {{ form_start(form, {'attr': {'class': 'needs-validation', 'id': 'amazon-import-form'}}) }}
 
                 {% if form.vars.submitted and not form.vars.valid %}
                     <div class="alert alert-danger small py-2">
@@ -57,8 +57,9 @@
                 </div>
 
                 <div class="d-grid gap-2 d-md-flex justify-content-md-start">
-                    <button type="submit" class="btn btn-primary btn-sm">
-                        <i class="fas fa-upload me-1"></i> インポート開始
+                    <button type="submit" class="btn btn-primary" id="submit-btn">
+                        <span id="btn-text">インポート開始</span>
+                        <span id="btn-spinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
                     </button>
                     <a href="{{ path('app_manifestation_index') }}" class="btn btn-outline-secondary btn-sm">
                         <i class="fas fa-arrow-left me-1"></i> 一覧に戻る
@@ -103,4 +104,27 @@
             </div>
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('amazon-import-form');
+            const btn = document.getElementById('submit-btn');
+            const btnText = document.getElementById('btn-text');
+            const spinner = document.getElementById('btn-spinner');
+
+            form.addEventListener('submit', function() {
+                // ボタンを無効化
+                btn.disabled = true;
+
+                // テキストを変更し、スピナーを表示
+                btnText.textContent = 'インポート処理中...';
+                spinner.classList.remove('d-none');
+
+                // ボタンのスタイルを少し変えて「処理中」感を出す
+                btn.classList.add('btn-secondary');
+                btn.classList.remove('btn-primary');
+            });
+        });
+    </script>
+
 {% endblock %}

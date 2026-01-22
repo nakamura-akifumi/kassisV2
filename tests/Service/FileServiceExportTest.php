@@ -5,21 +5,27 @@ namespace App\Tests\Service;
 use App\Entity\Manifestation;
 use App\Service\FileService;
 use Doctrine\ORM\EntityManagerInterface;
-use PHPUnit\Framework\TestCase;
+use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use Psr\Log\LoggerInterface;
 
-class FileServiceExportTest extends TestCase
+class FileServiceExportTest extends KernelTestCase
 {
     private $entityManager;
     private $logger;
     private FileService $fileService;
+    private $translator;
 
     protected function setUp(): void
     {
+        self::bootKernel();
+        $container = static::getContainer();
+
         $this->entityManager = $this->createMock(EntityManagerInterface::class);
         $this->logger = $this->createMock(LoggerInterface::class);
-        $this->fileService = new FileService($this->entityManager, $this->logger);
+        $this->translator = $container->get('translator');
+        
+        $this->fileService = new FileService($this->translator, $this->entityManager, $this->logger);
     }
 
     public function testGenerateExportFileMinimumColumnXlsx(): void
@@ -52,7 +58,7 @@ class FileServiceExportTest extends TestCase
         $columns = ['id', 'title', 'titleTranscription', 'identifier', 'externalIdentifier1',
             'externalIdentifier2', 'externalIdentifier3', 'description', 'buyer',
             'buyerIdentifier', 'purchaseDate', 'recordSource', 'type1', 'type2',
-            'type3', 'type4', 'location1', 'location2', 'contributor1', 'contributor2',
+            'type3', 'type4', 'class1', 'class2', 'location1', 'location2', 'contributor1', 'contributor2',
             'status1', 'status2', 'releaseDateString', 'price', 'createdAt', 'updatedAt'];
 
         // 実行
@@ -79,16 +85,18 @@ class FileServiceExportTest extends TestCase
         $this->assertEquals('分類２', $sheet->getCell('N1')->getValue());
         $this->assertEquals('分類３', $sheet->getCell('O1')->getValue());
         $this->assertEquals('分類４', $sheet->getCell('P1')->getValue());
-        $this->assertEquals('場所１', $sheet->getCell('Q1')->getValue());
-        $this->assertEquals('場所２', $sheet->getCell('R1')->getValue());
-        $this->assertEquals('貢献者１', $sheet->getCell('S1')->getValue());
-        $this->assertEquals('貢献者２', $sheet->getCell('T1')->getValue());
-        $this->assertEquals('ステータス１', $sheet->getCell('U1')->getValue());
-        $this->assertEquals('ステータス２', $sheet->getCell('V1')->getValue());
-        $this->assertEquals('発売日', $sheet->getCell('W1')->getValue());
-        $this->assertEquals('金額', $sheet->getCell('X1')->getValue());
-        $this->assertEquals('作成日時', $sheet->getCell('Y1')->getValue());
-        $this->assertEquals('更新日時', $sheet->getCell('Z1')->getValue());
+        $this->assertEquals('部類１', $sheet->getCell('Q1')->getValue());
+        $this->assertEquals('部類２', $sheet->getCell('R1')->getValue());
+        $this->assertEquals('場所１', $sheet->getCell('S1')->getValue());
+        $this->assertEquals('場所２', $sheet->getCell('T1')->getValue());
+        $this->assertEquals('貢献者１', $sheet->getCell('U1')->getValue());
+        $this->assertEquals('貢献者２', $sheet->getCell('V1')->getValue());
+        $this->assertEquals('ステータス１', $sheet->getCell('W1')->getValue());
+        $this->assertEquals('ステータス２', $sheet->getCell('X1')->getValue());
+        $this->assertEquals('発売日', $sheet->getCell('Y1')->getValue());
+        $this->assertEquals('金額', $sheet->getCell('Z1')->getValue());
+        $this->assertEquals('作成日時', $sheet->getCell('AA1')->getValue());
+        $this->assertEquals('更新日時', $sheet->getCell('AB1')->getValue());
         $this->assertEquals(1, $sheet->getCell('A2')->getValue());
         $this->assertEquals('テストタイトル', $sheet->getCell('B2')->getValue());
 
@@ -122,7 +130,7 @@ class FileServiceExportTest extends TestCase
         $columns = ['id', 'title', 'titleTranscription', 'identifier', 'externalIdentifier1',
             'externalIdentifier2', 'externalIdentifier3', 'description', 'buyer',
             'buyerIdentifier', 'purchaseDate', 'recordSource', 'type1', 'type2',
-            'type3', 'type4', 'location1', 'location2', 'contributor1', 'contributor2',
+            'type3', 'type4', 'class1', 'class2', 'location1', 'location2', 'contributor1', 'contributor2',
             'status1', 'status2', 'releaseDateString', 'price', 'createdAt', 'updatedAt'];
 
         $filePath = $this->fileService->generateExportFile($manifestations, 'csv', $columns);
@@ -131,8 +139,8 @@ class FileServiceExportTest extends TestCase
         $this->assertFileExists($filePath);
         $content = file_get_contents($filePath);
         // BOM(EF BB BF) + ヘッダー + データ
-        $this->assertStringContainsString('"ID","タイトル","ヨミ","識別子","外部識別子１","外部識別子２","外部識別子３","説明","購入先","購入先識別子","購入日","情報取得元","分類１","分類２","分類３","分類４","場所１","場所２","貢献者１","貢献者２","ステータス１","ステータス２","発売日","金額","作成日時","更新日時"', $content);
-        $this->assertStringContainsString('"2","CSVタイトル","タイトルヨミ","IDENTIFIER","1234567890X1","1234567890X2","1234567890X3","","購入元商店","BUYERIDENTIFIER","","https://shop.example.com/A/B/C/DEFGH","1234567890T1","1234567890T2","1234567890T3","1234567890T4","","","著者B","出版社X","STATUS1","STATUS2","2023","","2022-12-13 22:23:34","2022-12-14 11:23:34"', $content);
+        $this->assertStringContainsString('"ID","タイトル","ヨミ","識別子","外部識別子１","外部識別子２","外部識別子３","説明","購入先","購入先識別子","購入日","情報取得元","分類１","分類２","分類３","分類４","部類１","部類２","場所１","場所２","貢献者１","貢献者２","ステータス１","ステータス２","発売日","金額","作成日時","更新日時"', $content);
+        $this->assertStringContainsString('"2","CSVタイトル","タイトルヨミ","IDENTIFIER","1234567890X1","1234567890X2","1234567890X3","","購入元商店","BUYERIDENTIFIER","","https://shop.example.com/A/B/C/DEFGH","1234567890T1","1234567890T2","1234567890T3","1234567890T4","","","","","著者B","出版社X","STATUS1","STATUS2","2023","","2022-12-13 22:23:34","2022-12-14 11:23:34"', $content);
 
         unlink($filePath);
 

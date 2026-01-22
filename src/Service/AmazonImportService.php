@@ -201,14 +201,12 @@ class AmazonImportService
         if (!empty($headers[0])) {
             // BOMを検出して削除
             $headers[0] = preg_replace('/^\xEF\xBB\xBF/', '', $headers[0]);
-            // その他の不可視文字も削除
-            $headers[0] = preg_replace('/^[\x00-\x1F\x7F]/', '', $headers[0]);
+            // 先頭に残ったダブルクォートや制御文字をトリムする
+            $headers[0] = trim($headers[0], "\x00..\x1F\x7F\"");
         }
 
         $this->logger->info('CSVヘッダーを読み込みました', ['headers' => $headers]);
 
-        $titleIndex = false;
-        $asinIndex = false;
         $purchaseType = "";
         $needDigitalFiles = array('Digital Items.csv');
         $needRetailFiles = array('Retail.OrderHistory.1.csv','Retail.OrderHistory.3.csv');
@@ -223,7 +221,6 @@ class AmazonImportService
             $buyerIndex = array_search('Marketplace', $headers);
             $orderDateIndex = array_search('OrderDate', $headers);
             $orderIdIndex = array_search('Order ID', $headers);
-            //$QuantityIndex = array_search('Quantity', $headers);
             $priceIndex = array_search('Total Owed', $headers);
             $contributor2Index = array_search('SellerOfRecord', $headers);
         } elseif (in_array($csvFilesWithoutPath, $needRetailFiles)) {
@@ -234,9 +231,12 @@ class AmazonImportService
             $buyerIndex = array_search('Website', $headers);
             $orderDateIndex = array_search('Order Date', $headers);
             $orderIdIndex = array_search('Order ID', $headers);
-            //$QuantityIndex = array_search('Quantity', $headers);
             $priceIndex = array_search('Total Owed', $headers);
             $contributor2Index = null;
+
+            $this->logger->debug('@1 Retail headers:'.implode(',', $headers));
+            $this->logger->debug('@1 Retail buyerIndex:'.$buyerIndex);
+
         } else {
             $this->logger->debug('処理対象外のファイルです。'.$csvFilesWithoutPath);
             return $result;
@@ -377,6 +377,7 @@ class AmazonImportService
 
                 //
                 $price = $data[$priceIndex];
+                $contributor2 = null;
                 if ($contributor2Index !== false && !empty($data[$contributor2Index])) {
                     $contributor2 = $data[$contributor2Index];
                 }
@@ -399,6 +400,12 @@ class AmazonImportService
                 $manifestation->setStatus1('new');
                 if ($contributor2 !== null) {
                     $manifestation->setContributor2($contributor2);
+                }
+                if ($materialType === 'Digital') {
+                    $manifestation->setType2("デジタル");
+                }
+                if ($materialType === 'Retail' && $manifestation->getType1() === null) {
+                    $manifestation->setType1("リテイル");
                 }
 
                 // データベースに保存

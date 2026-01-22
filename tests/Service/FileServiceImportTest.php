@@ -139,6 +139,8 @@ class FileServiceImportTest extends WebTestCase
         $this->assertEquals("レーザーディスク", $manifestation->getType2());
         $this->assertEquals("禁帯", $manifestation->getType3());
         $this->assertEquals("ぶんぶんぶん４", $manifestation->getType4());
+        $this->assertEquals("ndcx/999.99", $manifestation->getClass1());
+        $this->assertEquals("Ndcy/123.456", $manifestation->getClass2());
         $this->assertEquals("日本国内", $manifestation->getLocation1());
         $this->assertEquals("北日本", $manifestation->getLocation2());
         $this->assertEquals("マーガレット", $manifestation->getContributor1());

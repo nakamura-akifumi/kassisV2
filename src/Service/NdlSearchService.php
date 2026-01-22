@@ -249,7 +249,8 @@ class NdlSearchService
         $manifestation->setIdentifier($bookData['identifier'] ?? '');
         $manifestation->setExternalIdentifier1($bookData['external_identifier1'] ?? '');
         $manifestation->setRecordSource($bookData['link'] ?? '');
-        $manifestation->setType1('図書'); // テストの期待値「図書」に固定、またはdcndl:materialTypeから取得
+        $manifestation->setType1('図書');
+        $manifestation->setType2('紙');
         $manifestation->setContributor1($bookData['creator'] ?? '');
         $manifestation->setContributor2($bookData['publisher'] ?? '');
         $manifestation->setReleaseDateString($bookData['date'] ?? '');

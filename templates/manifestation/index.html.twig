@@ -22,28 +22,51 @@
             <div class="card-header">
                 <h5>書誌検索</h5>
             </div>
+
             <div class="card-body">
                 <form action="{{ path('app_manifestation_index') }}" method="get" id="search_form">
+                    <input type="hidden" name="mode" id="search_mode" value="{{ search_params.mode|default('simple') }}">
+
                     <div class="mb-3">
-                        <label for="search_q_single" class="form-label">{{ 'Model.Manifestation.fields.Description'|trans }} / {{ 'Model.Manifestation.fields.Title'|trans }} / {{ 'Model.Manifestation.fields.Identifier'|trans }}</label>
-                        <div class="input-group">
-                            {# 1行入力用 #}
+                        {# モード1: キーワード入力 (Simple) #}
+                        <div id="wrapper_q_simple" class="search-wrapper">
+                            <label for="search_q_single" class="form-label small fw-bold">キーワード検索</label>
                             <input type="text" name="q" id="search_q_single" class="form-control"
-                                   value="{{ search_params.q|default('') }}"
-                                   placeholder="キーワードを入力...">
+                                   value="{{ search_params.q|default('') }}" placeholder="キーワードを入力...">
+                        </div>
 
-                            {# 複数行入力用 (初期状態は非表示) #}
-                            <textarea name="q" id="search_q_multi" class="form-control d-none"
+                        {# モード2: 複数識別子 (Multi) #}
+                        <div id="wrapper_q_multi" class="search-wrapper d-none">
+                            <label for="search_q_multi" class="form-label small fw-bold">識別子を複数検索（1行1件）</label>
+                            <textarea name="q" id="search_q_multi" class="form-control"
                                       rows="5" placeholder="1行に1つの識別子を入力..." disabled>{{ search_params.q|default('') }}</textarea>
+                        </div>
 
-                            <button class="btn btn-outline-secondary" type="button" id="toggle_search_mode" title="入力モード切り替え">
-                                <i class="bi bi-textarea-t"> 切り替え </i>
-                            </button>
+                        {# モード3: 詳細検索 (Advanced) #}
+                        <div id="wrapper_advanced" class="search-wrapper d-none">
+                            <div class="row g-2">
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-bold">識別子（前方一致）</label>
+                                    <input type="text" name="identifier" class="form-control" value="{{ search_params.identifier|default('') }}" disabled>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-bold">タイプ1（完全一致）</label>
+                                    <input type="text" name="type1" class="form-control" value="{{ search_params.type1|default('') }}" disabled>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-bold">タイプ2（完全一致）</label>
+                                    <input type="text" name="type2" class="form-control" value="{{ search_params.type2|default('') }}" disabled>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div class="text-end">
+
+                    <div class="d-flex justify-content-between">
+                        <button class="btn btn-outline-secondary btn-sm" type="button" id="toggle_search_mode">
+                            <i class="bi bi-gear"></i> モード切替
+                        </button>
                         <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-search"></i> {{ 'Model.actions.search'|trans|default('Search') }}
+                            <i class="bi bi-search"></i> {{ 'Model.actions.search'|trans|default('検索実行') }}
                         </button>
                     </div>
                 </form>
@@ -102,12 +125,43 @@
                 const searchResults = document.getElementById('search-results');
                 const loading = document.getElementById('loading');
                 let currentViewMode = '{{ view_mode|default("list") }}';
+                const modeInput = document.getElementById('search_mode');
+                const toggleBtn = document.getElementById('toggle_search_mode');
+
+                const wrappers = {
+                    'simple': document.getElementById('wrapper_q_simple'),
+                    'multi': document.getElementById('wrapper_q_multi'),
+                    'advanced': document.getElementById('wrapper_advanced')
+                };
+
+                function switchMode(newMode) {
+                    Object.keys(wrappers).forEach(m => {
+                        const isTarget = (m === newMode);
+                        wrappers[m].classList.toggle('d-none', !isTarget);
+                        // input/textarea/selectを有効化・無効化（送信対象を制御）
+                        wrappers[m].querySelectorAll('input, textarea, select').forEach(el => el.disabled = !isTarget);
+                    });
+                    modeInput.value = newMode;
+                }
+
+                // 初期状態の復元
+                switchMode(modeInput.value);
+
+                toggleBtn.addEventListener('click', function() {
+                    const current = modeInput.value;
+                    let next = 'simple';
+                    if (current === 'simple') next = 'multi';
+                    else if (current === 'multi') next = 'advanced';
+
+                    switchMode(next);
+                });
+
 
                 // 表示切替ボタンのクリックイベント
                 document.querySelectorAll('.btn-view-mode').forEach(button => {
                     button.addEventListener('click', function() {
                         const newMode = this.getAttribute('data-mode');
-                        
+
                         // hidden field がなければ作成、あれば更新
                         let modeInput = searchForm.querySelector('input[name="view_mode"]');
                         if (!modeInput) {
@@ -117,7 +171,7 @@
                             searchForm.appendChild(modeInput);
                         }
                         modeInput.value = newMode;
-                        
+
                         // 通常のフォーム送信（ページリロード）を行うことで検索条件を維持
                         searchForm.submit();
                     });
@@ -131,13 +185,11 @@
                         const queryParams = new URLSearchParams(formData);
                         // view_modeはエクスポートには不要なので削除（任意）
                         queryParams.delete('view_mode');
-                        
+
                         // エクスポート画面のURLへ、現在の検索パラメータを付与して遷移
                         window.location.href = '{{ path('app_manifestation_file_export') }}?' + queryParams.toString();
                     });
                 }
-
-                // ... existing toggle logic ...
 
                 searchForm.addEventListener('submit', function(e) {
                     e.preventDefault();
