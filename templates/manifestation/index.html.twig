@@ -12,6 +12,18 @@
         .panel-item .panel-image-container { width: 100%; height: 180px; display: flex; justify-content: center; align-items: center; margin-bottom: 10px; background-color: #f1f3f5; border-radius: 4px; overflow: hidden; }
         .panel-item img { max-width: 100%; max-height: 100%; object-fit: contain; }
         #grid-container { width: 100%; height: 600px; border: 1px solid #ddd; }
+
+        /* 追加: 詳細ポップアップ（モーダル）を小さめフォントに */
+        #manifestationDetailModal .modal-body {
+            font-size: 0.85rem;
+            line-height: 1.35;
+        }
+        #manifestationDetailModal .kv dt {
+            font-weight: 700;
+        }
+        #manifestationDetailModal .kv dd {
+            margin-bottom: 0.35rem;
+        }
     </style>
 {% endblock %}
 
@@ -107,6 +119,26 @@
                 {% endif %}
             </div>
 
+            <!-- 追加: 詳細表示モーダル -->
+            <div class="modal fade" id="manifestationDetailModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                    <div class="modal-content">
+                        <div class="modal-header py-2">
+                            <h5 class="modal-title mb-0" id="manifestationDetailModalTitle">Manifestation 詳細</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div id="manifestationDetailModalBody" class="small text-muted">
+                                読み込み中...
+                            </div>
+                        </div>
+                        <div class="modal-footer py-2">
+                            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">閉じる</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- ローディングインジケーター (不足していた要素を追加) -->
             <div id="loading" class="text-center d-none my-4">
                 <div class="spinner-border text-primary" role="status">
@@ -121,10 +153,11 @@
         <script>
             document.addEventListener('DOMContentLoaded', function() {
                 let grid = null;
+
                 const searchForm = document.getElementById('search_form');
                 const searchResults = document.getElementById('search-results');
                 const loading = document.getElementById('loading');
-                let currentViewMode = '{{ view_mode|default("list") }}';
+
                 const modeInput = document.getElementById('search_mode');
                 const toggleBtn = document.getElementById('toggle_search_mode');
 
@@ -138,13 +171,11 @@
                     Object.keys(wrappers).forEach(m => {
                         const isTarget = (m === newMode);
                         wrappers[m].classList.toggle('d-none', !isTarget);
-                        // input/textarea/selectを有効化・無効化（送信対象を制御）
                         wrappers[m].querySelectorAll('input, textarea, select').forEach(el => el.disabled = !isTarget);
                     });
                     modeInput.value = newMode;
                 }
 
-                // 初期状態の復元
                 switchMode(modeInput.value);
 
                 toggleBtn.addEventListener('click', function() {
@@ -152,47 +183,177 @@
                     let next = 'simple';
                     if (current === 'simple') next = 'multi';
                     else if (current === 'multi') next = 'advanced';
-
                     switchMode(next);
                 });
 
+                function escapeHtml(str) {
+                    if (str === null || str === undefined) return '';
+                    return String(str)
+                        .replaceAll('&', '&amp;')
+                        .replaceAll('<', '&lt;')
+                        .replaceAll('>', '&gt;')
+                        .replaceAll('"', '&quot;')
+                        .replaceAll("'", '&#039;');
+                }
 
-                // 表示切替ボタンのクリックイベント
+                function renderKeyValueDl(data, items) {
+                    const rows = items
+                        .filter(it => data[it.key] !== null && data[it.key] !== undefined && String(data[it.key]).trim() !== '')
+                        .map(it => `<dt class="col-4">${escapeHtml(it.label)}</dt><dd class="col-8">${escapeHtml(data[it.key])}</dd>`)
+                        .join('');
+                    return `<dl class="row kv mb-0">${rows || '<div class="text-muted">表示できる詳細情報がありません。</div>'}</dl>`;
+                }
+
+                async function openManifestationPopup(id) {
+                    const modalEl = document.getElementById('manifestationDetailModal');
+                    const titleEl = document.getElementById('manifestationDetailModalTitle');
+                    const bodyEl = document.getElementById('manifestationDetailModalBody');
+                    if (!modalEl || !titleEl || !bodyEl) return;
+
+                    titleEl.textContent = 'Manifestation 詳細';
+                    bodyEl.textContent = '読み込み中...';
+
+                    if (window.bootstrap && window.bootstrap.Modal) {
+                        window.bootstrap.Modal.getOrCreateInstance(modalEl).show();
+                    }
+
+                    try {
+                        const url = '{{ path('app_manifestation_popup', {'id': 0}) }}'.replace(/0\/popup$/, String(id) + '/popup');
+                        const res = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+                        if (!res.ok) throw new Error('HTTP ' + res.status);
+
+                        const data = await res.json();
+
+                        titleEl.textContent = `Manifestation #${data.id}: ${data.title || ''}`.trim();
+                        bodyEl.innerHTML = renderKeyValueDl(data, [
+                            { key: 'identifier', label: '識別子' },
+                            { key: 'titleTranscription', label: 'タイトル（読み）' },
+                            { key: 'externalIdentifier1', label: '外部ID1' },
+                            { key: 'externalIdentifier2', label: '外部ID2' },
+                            { key: 'externalIdentifier3', label: '外部ID3' },
+                            { key: 'purchaseDate', label: '購入日' },
+                            { key: 'buyer', label: '購入者' },
+                            { key: 'buyerIdentifier', label: '購入者識別子' },
+                            { key: 'type1', label: 'タイプ1' },
+                            { key: 'type2', label: 'タイプ2' },
+                            { key: 'location1', label: 'ロケーション1' },
+                            { key: 'location2', label: 'ロケーション2' },
+                            { key: 'contributor1', label: '著者/寄与者1' },
+                            { key: 'contributor2', label: '著者/寄与者2' },
+                            { key: 'releaseDateString', label: '出版日（文字列）' },
+                            { key: 'price', label: '価格' },
+                            { key: 'status1', label: 'ステータス1' },
+                            { key: 'status2', label: 'ステータス2' },
+                            { key: 'updatedAt', label: '更新日時' },
+                            { key: 'description', label: '説明' },
+                        ]);
+                    } catch (e) {
+                        bodyEl.innerHTML = '<div class="alert alert-danger py-2 mb-0 small">詳細情報の取得に失敗しました。再度お試しください。</div>';
+                    }
+                }
+
+                function renderGrid(records) {
+                    const parentElement = document.getElementById("grid-container");
+                    if (!parentElement) return;
+
+                    const normalizedRecords = (records || []).map(r => Object.assign({ __detail: '詳' }, r));
+
+                    const header = [
+                        {
+                            field: "__detail",
+                            caption: "",
+                            width: 48,
+                            style: {
+                                textAlign: "center",
+                                bgColor: "#e9f2ff",   // ボタンっぽい背景
+                                color: "#0d6efd",     // Bootstrap primary 相当
+                            },
+                        },
+                        { field: "id", caption: "ID", width: 60 },
+                        { field: "title", caption: "タイトル", width: 300 },
+                        { field: "identifier", caption: "識別子", width: 150 },
+                        { field: "externalIdentifier1", caption: "外部ID1", width: 150 },
+                        { field: "purchaseDate", caption: "購入日", width: 120 },
+                    ];
+
+                    if (grid) {
+                        grid.records = normalizedRecords;
+                        return;
+                    }
+
+                    grid = new cheetahGrid.ListGrid({
+                        parentElement: parentElement,
+                        header: header,
+                        records: normalizedRecords,
+                        frozenColCount: 2, // 左端「詳」＋IDを固定
+                    });
+
+                    // 追加：コンソールから触れるようにする
+                    window.__manifestationGrid = grid;
+
+                    // 追加：デバッグ用
+                    grid.listen('click_cell', function(a) { console.log('click_cell', a); });
+
+                    grid.listen('click_cell', function(args) {
+                        if (!args) return;
+                        if (args.col !== 0) return;
+
+                        // args.record が無い環境向け：row から取る（rowが1始まりなので -1 補正）
+                        let rec = args.record || null;
+                        if (!rec && grid.records && typeof args.row === 'number') {
+                            const idx = Math.max(0, args.row - 1);
+                            rec = grid.records[idx] || null;
+                        }
+
+                        const id = rec && rec.id ? rec.id : null;
+                        if (!id) return;
+
+                        openManifestationPopup(id);
+                    });
+
+                    // ホバーで「ボタン」感（カーソル）
+                    grid.listen('mousemove_cell', function(args) {
+                        if (!args) return;
+                        parentElement.style.cursor = (args.col === 0) ? 'pointer' : '';
+                    });
+                    grid.listen('mouseleave_grid', function() {
+                        parentElement.style.cursor = '';
+                    });
+
+                }
+
+                // 表示切替
                 document.querySelectorAll('.btn-view-mode').forEach(button => {
                     button.addEventListener('click', function() {
                         const newMode = this.getAttribute('data-mode');
 
-                        // hidden field がなければ作成、あれば更新
-                        let modeInput = searchForm.querySelector('input[name="view_mode"]');
-                        if (!modeInput) {
-                            modeInput = document.createElement('input');
-                            modeInput.type = 'hidden';
-                            modeInput.name = 'view_mode';
-                            searchForm.appendChild(modeInput);
+                        let vm = searchForm.querySelector('input[name="view_mode"]');
+                        if (!vm) {
+                            vm = document.createElement('input');
+                            vm.type = 'hidden';
+                            vm.name = 'view_mode';
+                            searchForm.appendChild(vm);
                         }
-                        modeInput.value = newMode;
-
-                        // 通常のフォーム送信（ページリロード）を行うことで検索条件を維持
+                        vm.value = newMode;
                         searchForm.submit();
                     });
                 });
 
-                // エクスポートボタンのクリックイベント
-                const exportBtn = document.getElementById('btn-export');
-                if (exportBtn) {
-                    exportBtn.addEventListener('click', function() {
+                // エクスポート
+                const exportBtnEl = document.getElementById('btn-export');
+                if (exportBtnEl) {
+                    exportBtnEl.addEventListener('click', function() {
                         const formData = new FormData(searchForm);
                         const queryParams = new URLSearchParams(formData);
-                        // view_modeはエクスポートには不要なので削除（任意）
                         queryParams.delete('view_mode');
-
-                        // エクスポート画面のURLへ、現在の検索パラメータを付与して遷移
                         window.location.href = '{{ path('app_manifestation_file_export') }}?' + queryParams.toString();
                     });
                 }
 
+                // 検索（AJAX）
                 searchForm.addEventListener('submit', function(e) {
                     e.preventDefault();
+
                     const formData = new FormData(searchForm);
                     const viewMode = '{{ view_mode|default("list") }}';
                     formData.set('view_mode', viewMode);
@@ -204,38 +365,13 @@
                         method: 'GET',
                         headers: { 'X-Requested-With': 'XMLHttpRequest' }
                     })
-                    .then(response => (viewMode === 'grid' ? response.json() : response.text()))
-                    .then(data => {
-                        loading.classList.add('d-none');
-                        if (viewMode === 'grid') {
-                            renderGrid(data);
-                        } else {
-                            searchResults.innerHTML = data;
-                        }
-                    });
-                });
-
-                function renderGrid(records) {
-                    const parentElement = document.getElementById("grid-container");
-                    if (!parentElement) return;
-
-                    if (grid) {
-                        grid.records = records;
-                    } else {
-                        grid = new cheetahGrid.ListGrid({
-                            parentElement: parentElement,
-                            header: [
-                                { field: "id", caption: "ID", width: 60 },
-                                { field: "title", caption: "タイトル", width: 300 },
-                                { field: "identifier", caption: "識別子", width: 150 },
-                                { field: "externalIdentifier1", caption: "外部ID1", width: 150 },
-                                { field: "purchaseDate", caption: "購入日", width: 120 },
-                            ],
-                            records: records,
-                            frozenColCount: 1,
+                        .then(response => (viewMode === 'grid' ? response.json() : response.text()))
+                        .then(data => {
+                            loading.classList.add('d-none');
+                            if (viewMode === 'grid') renderGrid(data);
+                            else searchResults.innerHTML = data;
                         });
-                    }
-                }
+                });
 
                 // 初期状態が grid の場合は自動実行
                 if ('{{ view_mode|default("list") }}' === 'grid') {

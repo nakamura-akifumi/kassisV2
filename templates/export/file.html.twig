@@ -15,7 +15,13 @@
                     <p class="mb-0 mt-1">（検索条件がURLに付いている場合、その条件でエクスポートします）</p>
                 </div>
 
-                {{ form_start(form, {'attr': {'class': 'needs-validation'}}) }}
+                {# fetch失敗時の表示領域（textContentのみで埋める） #}
+                <div class="alert alert-danger small d-none" id="export-error" role="alert">
+                    <div class="fw-bold mb-1" id="export-error-title">エクスポートに失敗しました</div>
+                    <ul class="mb-0 ps-3" id="export-error-list"></ul>
+                </div>
+
+                {{ form_start(form, {'attr': {'class': 'needs-validation', 'id': 'manifestation-export-form'}}) }}
 
                 {# 検索条件の引き継ぎ（GETパラメータをそのまま hidden で維持） #}
                 {% for key, value in query %}
@@ -64,8 +70,9 @@
                 </div>
 
                 <div class="d-grid gap-2 d-md-flex justify-content-md-start">
-                    <button type="submit" class="btn btn-primary btn-sm">
-                        エクスポート
+                    <button type="submit" class="btn btn-primary btn-sm" id="export-btn">
+                        <span id="export-btn-text">エクスポート</span>
+                        <span id="export-btn-spinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
                     </button>
                     <a href="{{ path('app_manifestation_index') }}" class="btn btn-outline-secondary btn-sm">
                         一覧に戻る
@@ -76,4 +83,146 @@
             </div>
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('manifestation-export-form');
+            const btn = document.getElementById('export-btn');
+            const btnText = document.getElementById('export-btn-text');
+            const spinner = document.getElementById('export-btn-spinner');
+
+            const errorBox = document.getElementById('export-error');
+            const errorTitle = document.getElementById('export-error-title');
+            const errorList = document.getElementById('export-error-list');
+
+            if (!form || !btn || !btnText || !spinner || !errorBox || !errorTitle || !errorList) return;
+
+            const originalText = btnText.textContent;
+
+            function setLoading(isLoading) {
+                if (isLoading) {
+                    btn.disabled = true;
+                    btnText.textContent = 'エクスポート処理中...';
+                    spinner.classList.remove('d-none');
+                    btn.classList.add('btn-secondary');
+                    btn.classList.remove('btn-primary');
+                } else {
+                    btn.disabled = false;
+                    btnText.textContent = originalText;
+                    spinner.classList.add('d-none');
+                    btn.classList.add('btn-primary');
+                    btn.classList.remove('btn-secondary');
+                }
+            }
+
+            function clearError() {
+                errorTitle.textContent = 'エクスポートに失敗しました';
+                errorList.replaceChildren();
+                errorBox.classList.add('d-none');
+            }
+
+            function showError(message, details) {
+                // HTMLは使わず textContent だけで表示する
+                errorTitle.textContent = message || 'エクスポートに失敗しました';
+                errorList.replaceChildren();
+
+                const items = Array.isArray(details) && details.length ? details : [];
+                if (items.length === 0) {
+                    const li = document.createElement('li');
+                    li.textContent = '通信状況をご確認のうえ、再度お試しください。';
+                    errorList.appendChild(li);
+                } else {
+                    items.forEach((t) => {
+                        const li = document.createElement('li');
+                        li.textContent = String(t);
+                        errorList.appendChild(li);
+                    });
+                }
+
+                errorBox.classList.remove('d-none');
+                errorBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+
+            function getFileNameFromContentDisposition(headerValue) {
+                if (!headerValue) return null;
+                const matchQuoted = headerValue.match(/filename="([^"]+)"/i);
+                if (matchQuoted && matchQuoted[1]) return matchQuoted[1];
+
+                // 例: attachment; filename=xxx.csv
+                const matchPlain = headerValue.match(/filename=([^;]+)/i);
+                if (matchPlain && matchPlain[1]) return matchPlain[1].trim();
+
+                // RFC 5987: filename*=UTF-8''...
+                const matchStar = headerValue.match(/filename\*\s*=\s*UTF-8''([^;]+)/i);
+                if (matchStar && matchStar[1]) {
+                    try { return decodeURIComponent(matchStar[1]); } catch (e) { /* noop */ }
+                }
+
+                return null;
+            }
+
+            async function downloadByFetch() {
+                setLoading(true);
+
+                try {
+                    const actionUrl = form.getAttribute('action') || window.location.href;
+                    const method = (form.getAttribute('method') || 'POST').toUpperCase();
+
+                    const formData = new FormData(form);
+
+                    const res = await fetch(actionUrl, {
+                        method,
+                        body: formData,
+                        credentials: 'same-origin',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+
+                    const contentType = (res.headers.get('Content-Type') || '').toLowerCase();
+
+                    if (!res.ok) {
+                        // JSONなら message/errors を採用。HTML等は捨てて一般メッセージにする
+                        if (contentType.includes('application/json')) {
+                            const payload = await res.json().catch(() => null);
+                            showError(payload && payload.message ? payload.message : 'エクスポートに失敗しました', payload && payload.errors ? payload.errors : []);
+                        } else {
+                            showError('エクスポートに失敗しました', []);
+                        }
+                        return;
+                    }
+
+                    const blob = await res.blob();
+
+                    // ファイル名をレスポンスヘッダから取得（なければフォールバック）
+                    const cd = res.headers.get('Content-Disposition');
+                    const fileName =
+                        getFileNameFromContentDisposition(cd) ||
+                        ('manifestations_' + new Date().toISOString().replaceAll(':', '-').slice(0, 19) + '.dat');
+
+                    const url = window.URL.createObjectURL(blob);
+
+                    try {
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = fileName;
+                        document.body.appendChild(a);
+                        a.click();
+                        a.remove();
+                    } finally {
+                        // すぐ revoke すると環境によって失敗することがあるので少し遅らせる
+                        setTimeout(() => window.URL.revokeObjectURL(url), 3000);
+                    }
+                } finally {
+                    // ダウンロード開始処理が終わったら必ず戻す
+                    setLoading(false);
+                }
+            }
+
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                downloadByFetch();
+            });
+        });
+    </script>
 {% endblock %}

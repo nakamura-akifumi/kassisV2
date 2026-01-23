@@ -1,0 +1,113 @@
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        /* ... existing code ... */
+
+        /* モーダルは小さめフォント（要件） */
+        #manifestationDetailModal .modal-body {
+            font-size: 0.85rem;
+            line-height: 1.35;
+        }
+
+        /* グリッド左端「詳細」セルのホバー時カーソル */
+        #grid-container.grid-action-hover {
+            cursor: pointer;
+        }
+    </style>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            let grid = null;
+
+            // ... existing code ...
+
+            async function openManifestationPopup(id) {
+                const modalEl = document.getElementById('manifestationDetailModal');
+                const titleEl = document.getElementById('manifestationDetailModalTitle');
+                const bodyEl = document.getElementById('manifestationDetailModalBody');
+                if (!modalEl || !titleEl || !bodyEl) return;
+
+                titleEl.textContent = 'Manifestation 詳細';
+                bodyEl.textContent = '読み込み中...';
+
+                if (window.bootstrap && window.bootstrap.Modal) {
+                    window.bootstrap.Modal.getOrCreateInstance(modalEl).show();
+                }
+
+                try {
+                    const url = '{{ path('app_manifestation_popup_view', {'id': 0}) }}'.replace(/0\/popup_view$/, String(id) + '/popup_view');
+                    const res = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+                    if (!res.ok) throw new Error('HTTP ' + res.status);
+
+                    const html = await res.text();
+                    titleEl.textContent = `Manifestation #${id} 詳細`;
+                    bodyEl.innerHTML = html;
+                } catch (e) {
+                    bodyEl.innerHTML = '<div class="alert alert-danger py-2 mb-0 small">詳細情報の取得に失敗しました。</div>';
+                }
+            }
+
+            function renderGrid(records) {
+                const parentElement = document.getElementById("grid-container");
+                if (!parentElement) return;
+
+                // 左端列に表示するラベル（ボタン風に見せる）
+                const normalizedRecords = (records || []).map(r => Object.assign({ __detail: '詳細' }, r));
+
+                const header = [
+                    {
+                        field: "__detail",
+                        caption: "",
+                        width: 64,
+                        style: {
+                            textAlign: "center",
+                            bgColor: "#e9f2ff",
+                            color: "#0d6efd",
+                        },
+                    },
+                    { field: "id", caption: "ID", width: 60 },
+                    { field: "title", caption: "タイトル", width: 300 },
+                    { field: "identifier", caption: "識別子", width: 150 },
+                    { field: "externalIdentifier1", caption: "外部ID1", width: 150 },
+                    { field: "purchaseDate", caption: "購入日", width: 120 },
+                ];
+
+                if (grid) {
+                    grid.records = normalizedRecords;
+                    return;
+                }
+
+                grid = new cheetahGrid.ListGrid({
+                    parentElement: parentElement,
+                    header: header,
+                    records: normalizedRecords,
+                    frozenColCount: 2, // 左端「詳細」＋IDを固定
+                });
+
+                // クリック：左端列（col==0）ならポップアップ
+                grid.listen('click_cell', function(args) {
+                    if (!args) return;
+                    if (args.col !== 0) return;
+                    const rec = args.record;
+                    if (!rec || !rec.id) return;
+
+                    openManifestationPopup(rec.id);
+                });
+
+                // ホバー：左端列に乗ったらカーソルを pointer に
+                grid.listen('mousemove_cell', function(args) {
+                    if (!args) return;
+                    parentElement.classList.toggle('grid-action-hover', args.col === 0);
+                });
+                grid.listen('mouseleave_grid', function() {
+                    parentElement.classList.remove('grid-action-hover');
+                });
+            }
+
+            // ... existing code ...
+        });
+    </script>
+{% endblock %}

@@ -14,7 +14,7 @@
                     <p class="mb-0">「/file/export」で出力できるフォーマット（ID/タイトル/著者/出版社/出版年/ISBN）のファイルをアップロードしてください。</p>
                 </div>
 
-                {{ form_start(form, {'attr': {'class': 'needs-validation'}}) }}
+                {{ form_start(form, {'attr': {'class': 'needs-validation', 'id': 'file-import-form'}}) }}
                 <div class="mb-3">
                     {{ form_label(form.uploadFile, null, {'label_attr': {'class': 'form-label small mb-0 fw-bold'}}) }}
                     {{ form_widget(form.uploadFile) }}
@@ -25,8 +25,9 @@
                 </div>
 
                 <div class="d-grid gap-2 d-md-flex justify-content-md-start">
-                    <button type="submit" class="btn btn-primary btn-sm">
-                        インポート開始
+                    <button type="submit" class="btn btn-primary btn-sm" id="file-import-submit-btn">
+                        <span id="file-import-btn-text">インポート開始</span>
+                        <span id="file-import-btn-spinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
                     </button>
                     <a href="{{ path('app_manifestation_index') }}" class="btn btn-outline-secondary btn-sm">
                         一覧に戻る
@@ -71,4 +72,28 @@
             </div>
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('file-import-form');
+            const btn = document.getElementById('file-import-submit-btn');
+            const btnText = document.getElementById('file-import-btn-text');
+            const spinner = document.getElementById('file-import-btn-spinner');
+
+            if (!form || !btn || !btnText || !spinner) return;
+
+            form.addEventListener('submit', function() {
+                // ボタンを無効化
+                btn.disabled = true;
+
+                // テキストを変更し、スピナーを表示
+                btnText.textContent = 'インポート処理中...';
+                spinner.classList.remove('d-none');
+
+                // ボタンのスタイルを少し変えて「処理中」感を出す
+                btn.classList.add('btn-secondary');
+                btn.classList.remove('btn-primary');
+            });
+        });
+    </script>
 {% endblock %}

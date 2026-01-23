@@ -10,6 +10,7 @@ use App\Repository\ManifestationRepository;
 use App\Service\ManifestationSearchQuery;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\File\Exception\FileException;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -168,6 +169,43 @@ final class ManifestationController extends AbstractController
         return $this->render('manifestation/edit.html.twig', [
             'manifestation' => $manifestation,
             'form' => $form,
+        ]);
+    }
+
+    #[Route('/{id}/popup', name: 'app_manifestation_popup', methods: ['GET'])]
+    public function popup(Manifestation $manifestation): JsonResponse
+    {
+        return $this->json([
+            'id' => $manifestation->getId(),
+            'title' => $manifestation->getTitle(),
+            'titleTranscription' => $manifestation->getTitleTranscription(),
+            'identifier' => $manifestation->getIdentifier(),
+            'externalIdentifier1' => $manifestation->getExternalIdentifier1(),
+            'externalIdentifier2' => $manifestation->getExternalIdentifier2(),
+            'externalIdentifier3' => $manifestation->getExternalIdentifier3(),
+            'purchaseDate' => $manifestation->getPurchaseDate()?->format('Y-m-d'),
+            'buyer' => $manifestation->getBuyer(),
+            'buyerIdentifier' => $manifestation->getBuyerIdentifier(),
+            'type1' => $manifestation->getType1(),
+            'type2' => $manifestation->getType2(),
+            'location1' => $manifestation->getLocation1(),
+            'location2' => $manifestation->getLocation2(),
+            'contributor1' => $manifestation->getContributor1(),
+            'contributor2' => $manifestation->getContributor2(),
+            'releaseDateString' => $manifestation->getReleaseDateString(),
+            'price' => $manifestation->getFormattedPrice(),
+            'description' => $manifestation->getDescription(),
+            'status1' => $manifestation->getStatus1(),
+            'status2' => $manifestation->getStatus2(),
+            'updatedAt' => $manifestation->getUpdatedAt()?->format('Y-m-d H:i'),
+        ]);
+    }
+
+    #[Route('/{id}/popup_view', name: 'app_manifestation_popup_view', methods: ['GET'])]
+    public function popupView(Manifestation $manifestation): Response
+    {
+        return $this->render('manifestation/_popup_detail.html.twig', [
+            'manifestation' => $manifestation,
         ]);
     }
 

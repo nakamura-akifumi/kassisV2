@@ -8,6 +8,7 @@ use App\Repository\ManifestationRepository;
 use App\Service\FileService;
 use App\Service\ManifestationSearchQuery;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -61,32 +62,72 @@ class ManifestationExportImportController extends AbstractController
         $form = $this->createForm(ManifestationFileExportFormType::class);
         $form->handleRequest($request);
 
+        $isAjax = $request->isXmlHttpRequest();
+
         // GET: まず画面表示（検索条件があればそのまま引き継ぐ）
-        if (!$form->isSubmitted() || !$form->isValid()) {
+        if (!$form->isSubmitted()) {
             return $this->render('export/file.html.twig', [
                 'form' => $form->createView(),
                 'query' => $request->query->all(),
             ]);
         }
 
-        $this->logger->info('エクスポート処理を開始');
-        
-        $format = (string) $form->get('format')->getData(); // xlsx|csv
+        // バリデーションNG（AJAXならJSONで返す）
+        if (!$form->isValid()) {
+            if ($isAjax) {
+                $errors = [];
+                foreach ($form->getErrors(true, true) as $error) {
+                    $errors[] = $error->getMessage();
+                }
 
-        // 一覧画面と同じ検索クエリクラスを使用して条件を構築
-        $searchQuery = ManifestationSearchQuery::fromRequest($request->query->all());
-        
-        // リポジトリの統一された検索メソッドを呼び出す
-        $manifestations = $manifestationRepository->searchByQuery($searchQuery);
+                return new JsonResponse([
+                    'message' => '入力内容にエラーがあります。内容を確認してください。',
+                    'errors' => $errors,
+                ], 422);
+            }
 
-        $columns = $form->get('columns')->getData();
-        $tempFile = $fileService->generateExportFile($manifestations, $format, $columns);
+            return $this->render('export/file.html.twig', [
+                'form' => $form->createView(),
+                'query' => $request->query->all(),
+            ]);
+        }
 
-        $fileNameParts = ['manifestations'];
+        try {
+            $this->logger->info('エクスポート処理を開始');
 
-        $baseName = implode('_', $fileNameParts) . '_' . date('Y-m-d_H-i-s');
-        $fileName = $baseName . ($format === 'csv' ? '.csv' : '.xlsx');
+            $format = (string) $form->get('format')->getData(); // xlsx|csv
 
-        return $this->file($tempFile, $fileName, ResponseHeaderBag::DISPOSITION_ATTACHMENT);
+            // 一覧画面と同じ検索クエリクラスを使用して条件を構築
+            $searchQuery = ManifestationSearchQuery::fromRequest($request->query->all());
+
+            // リポジトリの統一された検索メソッドを呼び出す
+            $manifestations = $manifestationRepository->searchByQuery($searchQuery);
+
+            $columns = $form->get('columns')->getData();
+            $tempFile = $fileService->generateExportFile($manifestations, $format, $columns);
+
+            $fileNameParts = ['manifestations'];
+
+            $baseName = implode('_', $fileNameParts) . '_' . date('Y-m-d_H-i-s');
+            $fileName = $baseName . ($format === 'csv' ? '.csv' : '.xlsx');
+
+            return $this->file($tempFile, $fileName, ResponseHeaderBag::DISPOSITION_ATTACHMENT);
+        } catch (\Throwable $e) {
+            $this->logger->error('エクスポート処理でエラーが発生しました', [
+                'error' => $e->getMessage(),
+            ]);
+
+            if ($isAjax) {
+                return new JsonResponse([
+                    'message' => 'エクスポート中にエラーが発生しました。時間をおいて再度お試しください。',
+                ], 500);
+            }
+
+            $this->addFlash('danger', 'エクスポート中にエラーが発生しました。');
+            return $this->render('export/file.html.twig', [
+                'form' => $form->createView(),
+                'query' => $request->query->all(),
+            ]);
+        }
     }
 }
