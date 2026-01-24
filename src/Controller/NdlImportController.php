@@ -25,6 +25,15 @@ class NdlImportController extends AbstractController
         if ($form->isSubmitted() && $form->isValid()) {
             $isbn = $form->get('isbn')->getData();
 
+            $existing = $ndlImportService->findExistingByIsbn((string) $isbn);
+            if ($existing !== null) {
+                $error = sprintf('すでに同じISBNの資料があります。ISBN (%s)', (string) $isbn);
+                return $this->render('import/isbn.html.twig', [
+                    'form' => $form->createView(),
+                    'error' => $error,
+                ]);
+            }
+
             $manifestation = $ndlImportService->importByIsbn((string) $isbn);
 
             if ($manifestation) {

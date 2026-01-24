@@ -5,7 +5,7 @@
 {% block body %}
     <div class="container py-2">
         <div class="card shadow-sm border-0">
-            <div class="card-header bg-success text-white py-1">
+            <div class="card-header bg-primary text-white py-1">
                 <h2 class="mb-0 fs-5 lh-1"><i class="fas fa-plus-circle me-1"></i>新規書誌登録</h2>
             </div>
 
@@ -54,9 +54,13 @@
             const formControls = document.querySelectorAll('.form-control, .form-select');
             formControls.forEach(element => {
                 element.addEventListener('focus', function() {
-                    this.closest('.mb-3').classList.add('was-validated');
+                    this.closest('.mb-3')?.classList.add('was-validated');
                 });
             });
+
+            // 追加：新規入力画面を開いたら、フォーム内の最初の入力項目にフォーカス
+            const firstField = document.querySelector('form input:not([type="hidden"]):not([disabled]), form textarea:not([disabled]), form select:not([disabled])');
+            if (firstField) firstField.focus();
         });
     </script>
 {% endblock %}

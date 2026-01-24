@@ -30,6 +30,29 @@ class NdlImportService
 
         return $this->ndlSearchService->createManifestation($bookData);
     }
+
+    public function findExistingByIsbn(string $rawIsbn): ?Manifestation
+    {
+        $normalizedIsbn = IsbnService::convertToIsbn13($rawIsbn);
+        if ($normalizedIsbn === null) {
+            return null;
+        }
+
+        $repository = $this->entityManager->getRepository(Manifestation::class);
+
+        $existing = $repository->findOneBy(['external_identifier1' => $normalizedIsbn]);
+        if ($existing !== null) {
+            return $existing;
+        }
+
+        $rawIsbn = trim($rawIsbn);
+        $existing = $repository->findOneBy(['identifier' => $rawIsbn]);
+        if ($existing !== null) {
+            return $existing;
+        }
+
+        return $repository->findOneBy(['identifier' => $normalizedIsbn]);
+    }
     /**
      * ISBN（生入力OK）からNDL検索→Manifestation作成→DB保存まで行う
      * 見つからない/不正な場合はnull

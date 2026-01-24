@@ -4,30 +4,71 @@
 {% block title %}ISBNからインポート{% endblock %}
 
 {% block body %}
-    <div class="container">
-        <h1>ISBNから書籍情報をインポート</h1>
+    <div class="container py-2">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-primary text-white py-1">
+                <h2 class="mb-0 fs-5 lh-1">ISBNから書籍情報をインポート</h2>
+            </div>
 
-        <p class="mb-4">
-            国立国会図書館のデータベースからISBNを使って書籍情報をインポートします。
-            ISBN-10またはISBN-13を入力してください。ハイフンの有無は問いません。
-        </p>
+            <div class="card-body p-3">
+                <div class="alert alert-info small">
+                    <p class="mb-0">
+                        国立国会図書館のデータベースからISBNを使って書籍情報をインポートします。
+                        ISBN-10またはISBN-13を入力してください。ハイフンの有無は問いません。
+                    </p>
+                </div>
 
-        {% if error %}
-            <div class="alert alert-danger">{{ error }}</div>
-        {% endif %}
+                {% if error %}
+                    <div class="alert alert-danger small py-2" id="isbn-import-error">{{ error }}</div>
+                {% endif %}
 
-        {{ form_start(form) }}
-        <div class="mb-3">
-            {{ form_label(form.isbn) }}
-            {{ form_widget(form.isbn, {'attr': {'class': 'form-control'}}) }}
-            {{ form_errors(form.isbn) }}
-            <small class="form-text text-muted">書籍のISBNコードを入力してください</small>
+                {{ form_start(form, {'attr': {'class': 'needs-validation', 'id': 'isbn-import-form'}}) }}
+                <div class="mb-3">
+                    {{ form_label(form.isbn, null, {'label_attr': {'class': 'form-label small mb-0 fw-bold'}}) }}
+                    {{ form_widget(form.isbn, {'attr': {'class': 'form-control', 'autofocus': 'autofocus'}}) }}
+                    <div class="form-text text-danger small">
+                        {{ form_errors(form.isbn) }}
+                    </div>
+                    <div class="form-text small text-muted">書籍のISBNコードを入力してください</div>
+                </div>
+
+                <div class="d-grid gap-2 d-md-flex justify-content-md-start">
+                    <button type="submit" class="btn btn-primary btn-sm" id="isbn-import-submit-btn">
+                        <span id="isbn-import-btn-text">検索してインポート</span>
+                        <span id="isbn-import-btn-spinner" class="spinner-border spinner-border-sm ms-2 d-none" role="status" aria-hidden="true"></span>
+                    </button>
+
+                    <a href="{{ path('app_manifestation_index') }}" class="btn btn-outline-secondary btn-sm">
+                        一覧に戻る
+                    </a>
+                </div>
+                {{ form_end(form) }}
+            </div>
         </div>
-
-        <div class="mb-3">
-            {{ form_widget(form.submit, {'attr': {'class': 'btn btn-primary'}}) }}
-            <a href="{{ path('app_manifestation_index') }}" class="btn btn-secondary">戻る</a>
-        </div>
-        {{ form_end(form) }}
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('isbn-import-form');
+            const btn = document.getElementById('isbn-import-submit-btn');
+            const btnText = document.getElementById('isbn-import-btn-text');
+            const spinner = document.getElementById('isbn-import-btn-spinner');
+            const errorAlert = document.getElementById('isbn-import-error');
+
+            if (!form || !btn || !btnText || !spinner) return;
+
+            form.addEventListener('submit', function() {
+                if (errorAlert) {
+                    errorAlert.classList.add('d-none');
+                }
+
+                btn.disabled = true;
+                btnText.textContent = '処理中...';
+                spinner.classList.remove('d-none');
+
+                btn.classList.add('btn-secondary');
+                btn.classList.remove('btn-primary');
+            });
+        });
+    </script>
 {% endblock %}
