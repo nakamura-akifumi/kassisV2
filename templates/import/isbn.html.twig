@@ -25,11 +25,20 @@
                 {{ form_start(form, {'attr': {'class': 'needs-validation', 'id': 'isbn-import-form'}}) }}
                 <div class="mb-3">
                     {{ form_label(form.isbn, null, {'label_attr': {'class': 'form-label small mb-0 fw-bold'}}) }}
-                    {{ form_widget(form.isbn, {'attr': {'class': 'form-control', 'autofocus': 'autofocus'}}) }}
+                    {% set isbn_attr = {'class': 'form-control', 'autofocus': 'autofocus', 'id': 'isbn-input'} %}
+                    {% if clear_isbn %}
+                        {% set isbn_attr = isbn_attr|merge({'value': ''}) %}
+                    {% endif %}
+                    {{ form_widget(form.isbn, {'attr': isbn_attr}) }}
                     <div class="form-text text-danger small">
                         {{ form_errors(form.isbn) }}
                     </div>
                     <div class="form-text small text-muted">書籍のISBNコードを入力してください</div>
+                </div>
+
+                <div class="form-check mb-2">
+                    {{ form_widget(form.continuousImport, {'attr': {'class': 'form-check-input'}}) }}
+                    {{ form_label(form.continuousImport, null, {'label_attr': {'class': 'form-check-label small'}}) }}
                 </div>
 
                 <div class="d-grid gap-2 d-md-flex justify-content-md-start">
@@ -42,6 +51,20 @@
                         一覧に戻る
                     </a>
                 </div>
+
+                {% if imported_items is not empty %}
+                    <div class="mt-3">
+                        <div class="small text-muted mb-1">インポート済み（最新が上）</div>
+                        <ul class="list-group">
+                            {% for item in imported_items %}
+                                <li class="list-group-item py-1">
+                                    <div class="fw-bold small">{{ item.title }}</div>
+                                    <div class="small text-muted">ISBN: {{ item.isbn }}</div>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
                 {{ form_end(form) }}
             </div>
         </div>
@@ -54,8 +77,15 @@
             const btnText = document.getElementById('isbn-import-btn-text');
             const spinner = document.getElementById('isbn-import-btn-spinner');
             const errorAlert = document.getElementById('isbn-import-error');
+            const isbnInput = document.getElementById('isbn-input');
+            const shouldClearIsbn = {{ clear_isbn ? 'true' : 'false' }};
 
             if (!form || !btn || !btnText || !spinner) return;
+
+            if (isbnInput && shouldClearIsbn) {
+                isbnInput.value = '';
+                isbnInput.focus();
+            }
 
             form.addEventListener('submit', function() {
                 if (errorAlert) {

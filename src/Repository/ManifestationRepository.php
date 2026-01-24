@@ -59,12 +59,12 @@ class ManifestationRepository extends ServiceEntityRepository
         }
 
         if ($type1) {
-            $qb->andWhere('m.description = :type1')
+            $qb->andWhere('m.type1 = :type1')
                 ->setParameter('type1', $type1);
         }
 
         if ($type2) {
-            $qb->andWhere('m.description = :type2')
+            $qb->andWhere('m.type2 = :type2')
                 ->setParameter('type2', $type2);
         }
 /*

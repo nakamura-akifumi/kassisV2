@@ -21,9 +21,13 @@ class NdlImportController extends AbstractController
 
         $result = null;
         $error = null;
+        $session = $request->getSession();
+        $importedItems = $session->get('isbn_imported_items', []);
+        $clearIsbn = $form->isSubmitted();
 
         if ($form->isSubmitted() && $form->isValid()) {
             $isbn = $form->get('isbn')->getData();
+            $continuousImport = (bool) $form->get('continuousImport')->getData();
 
             $existing = $ndlImportService->findExistingByIsbn((string) $isbn);
             if ($existing !== null) {
@@ -31,25 +35,48 @@ class NdlImportController extends AbstractController
                 return $this->render('import/isbn.html.twig', [
                     'form' => $form->createView(),
                     'error' => $error,
+                    'imported_items' => $importedItems,
+                    'clear_isbn' => $clearIsbn,
                 ]);
             }
 
             $manifestation = $ndlImportService->importByIsbn((string) $isbn);
 
             if ($manifestation) {
+                if ($continuousImport) {
+                    $importedItems = $session->get('isbn_imported_items', []);
+                    $importedIsbn = $manifestation->getExternalIdentifier1() ?? $manifestation->getIdentifier() ?? '';
+                    array_unshift($importedItems, [
+                        'title' => $manifestation->getTitle() ?? '',
+                        'isbn' => $importedIsbn,
+                    ]);
+                    $session->set('isbn_imported_items', $importedItems);
+                }
+
                 $this->addFlash('success', '書籍「' . $manifestation->getTitle() . '」をインポートしました');
+
+                if ($continuousImport) {
+                    return $this->render('import/isbn.html.twig', [
+                        'form' => $form->createView(),
+                        'error' => null,
+                        'imported_items' => $importedItems,
+                        'clear_isbn' => $clearIsbn,
+                    ]);
+                }
 
                 return $this->redirectToRoute('app_manifestation_show', [
                     'id' => $manifestation->getId(),
                 ]);
             }
 
-            $error = 'ISBNに該当する書籍が見つかりませんでした';
+            $error = sprintf('ISBNに該当する書籍が見つかりませんでした。ISBN (%s)', (string) $isbn);
         }
 
         return $this->render('import/isbn.html.twig', [
             'form' => $form->createView(),
             'error' => $error,
+            'imported_items' => $importedItems,
+            'clear_isbn' => $clearIsbn,
         ]);
     }
 }

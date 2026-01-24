@@ -6,7 +6,7 @@
 parameters:
     app.amazon_import.book_only: true
     app.amazon_import.use_ndl: true
-    app.enabled_display_modes: grid, list, panel
+    app.enabled_display_modes: grid, list, panel, map
 
 services:
     # default configuration for services in *this* file

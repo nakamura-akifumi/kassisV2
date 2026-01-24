@@ -42,26 +42,48 @@
                     <label class="form-label fw-bold">1. 出力項目を選択してください</label>
                     <div class="row g-2">
                         {% set fields = [
-                            'Id', 'Title', 'Title_Transcription', 'Identifier', 'External_identifier1',
-                            'External_identifier2', 'External_identifier3', 'Description', 'Buyer',
-                            'Buyer_identifier', 'Purchase_date', 'RecordSource', 'Type1', 'Type2',
-                            'Type3', 'Type4', 'Class1', 'Class2', 'Location1', 'Location2', 'Contributor1', 'Contributor2',
-                            'Status1', 'Status2', 'ReleaseDateString', 'Price', 'CreatedAt', 'UpdatedAt'
+                            {'key': 'id', 'label': 'Id'},
+                            {'key': 'title', 'label': 'Title'},
+                            {'key': 'titleTranscription', 'label': 'Title_Transcription'},
+                            {'key': 'identifier', 'label': 'Identifier'},
+                            {'key': 'externalIdentifier1', 'label': 'External_identifier1'},
+                            {'key': 'externalIdentifier2', 'label': 'External_identifier2'},
+                            {'key': 'externalIdentifier3', 'label': 'External_identifier3'},
+                            {'key': 'description', 'label': 'Description'},
+                            {'key': 'buyer', 'label': 'Buyer'},
+                            {'key': 'buyerIdentifier', 'label': 'Buyer_identifier'},
+                            {'key': 'purchaseDate', 'label': 'Purchase_date'},
+                            {'key': 'recordSource', 'label': 'RecordSource'},
+                            {'key': 'type1', 'label': 'Type1'},
+                            {'key': 'type2', 'label': 'Type2'},
+                            {'key': 'type3', 'label': 'Type3'},
+                            {'key': 'type4', 'label': 'Type4'},
+                            {'key': 'class1', 'label': 'Class1'},
+                            {'key': 'class2', 'label': 'Class2'},
+                            {'key': 'location1', 'label': 'Location1'},
+                            {'key': 'location2', 'label': 'Location2'},
+                            {'key': 'contributor1', 'label': 'Contributor1'},
+                            {'key': 'contributor2', 'label': 'Contributor2'},
+                            {'key': 'status1', 'label': 'Status1'},
+                            {'key': 'status2', 'label': 'Status2'},
+                            {'key': 'releaseDateString', 'label': 'ReleaseDateString'},
+                            {'key': 'price', 'label': 'Price'},
+                            {'key': 'createdAt', 'label': 'CreatedAt'},
+                            {'key': 'updatedAt', 'label': 'UpdatedAt'}
                         ] %}
                         {% for field in fields %}
-                            {% set fieldKey = field|first|lower ~ field|slice(1) %}
-                            {% set isRequired = fieldKey in ['id', 'title', 'identifier'] %}
+                            {% set isRequired = field.key in ['id', 'title', 'identifier'] %}
                             <div class="col-md-3 col-sm-6">
                                 <div class="form-check">
                                     <input class="form-check-input" type="checkbox" name="{{ form.columns.vars.full_name }}[]"
-                                               value="{{ fieldKey }}" id="col_{{ fieldKey }}"
+                                               value="{{ field.key }}" id="col_{{ field.key }}"
                                                {% if isRequired %}checked disabled{% else %}checked{% endif %}>
-                                    <label class="form-check-label" for="col_{{ fieldKey }}">
-                                        {{ ('Model.Manifestation.fields.' ~ field) | trans }}
+                                    <label class="form-check-label" for="col_{{ field.key }}">
+                                        {{ ('Model.Manifestation.fields.' ~ field.label) | trans }}
                                     </label>
                                     {# disabledな要素は送信されないため、必須項目はhiddenで確実に送る #}
                                     {% if isRequired %}
-                                        <input type="hidden" name="{{ form.columns.vars.full_name }}[]" value="{{ fieldKey }}">
+                                        <input type="hidden" name="{{ form.columns.vars.full_name }}[]" value="{{ field.key }}">
                                     {% endif %}
                                 </div>
                             </div>
