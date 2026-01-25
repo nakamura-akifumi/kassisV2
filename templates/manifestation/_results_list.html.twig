@@ -69,41 +69,44 @@
             </a>
         {% endfor %}
     </div>
-
-    <script>
-        (function() {
-            const loadPanelImages = () => {
-                document.querySelectorAll('.manifestation-panel-img').forEach(img => {
-                    const isbn = img.getAttribute('data-isbn');
-                    const id = img.id.replace('img-isbn-', '');
-                    const fallback = document.getElementById('img-fallback-' + id);
-
-                    if (!isbn) return;
-
-                    fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}`)
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.totalItems > 0 && data.items && data.items[0].volumeInfo.imageLinks && data.items[0].volumeInfo.imageLinks.thumbnail) {
-                                const imgUrl = data.items[0].volumeInfo.imageLinks.thumbnail.replace('http:', 'https:');
-                                img.src = imgUrl;
-                                img.onload = () => {
-                                    if (img.naturalWidth > 1) {
-                                        img.classList.remove('d-none');
-                                        if (fallback) fallback.classList.add('d-none');
-                                    }
-                                };
-                            }
-                        })
-                        .catch(err => console.error('Google Books API Error for ' + isbn, err));
-                });
-            };
-            
-            // DOMContentLoaded または即時実行（AJAX読み込み対応）
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', loadPanelImages);
-            } else {
-                loadPanelImages();
-            }
-        })();
+{% elseif view_mode == 'map' %}
+    {% if manifestations|length > 20 %}
+        <div class="alert alert-info py-2 mb-3">
+            <i class="fas fa-info-circle"></i> 検索結果が20件を超えています。最初の20件のみ表示しています。
+        </div>
+    {% endif %}
+    <div class="map-layout">
+        <div id="map-container" class="map-container"></div>
+        <div class="map-results">
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>{{ 'Model.Manifestation.fields.Title' | trans }}</th>
+                        <th>{{ 'Model.Manifestation.fields.Identifier' | trans }}</th>
+                        <th>{{ 'Model.Manifestation.fields.External_identifier1' | trans }}</th>
+                        <th>{{ 'Model.Manifestation.fields.Purchase_date' | trans }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for manifestation in manifestations|slice(0, 20) %}
+                    <tr>
+                        <td><a href="{{ path('app_manifestation_show', {'id': manifestation.id}) }}">{{ manifestation.title }}</a></td>
+                        <td>{{ manifestation.identifier }}</td>
+                        <td>{{ manifestation.externalIdentifier1 }}</td>
+                        <td>{{ manifestation.purchaseDate ? manifestation.purchaseDate|date('Y-m-d') : '' }}</td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="4">{{ 'Screen.Manifestation.NoRecordFound' | trans }}</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <script type="application/json" id="map-data">
+        [
+        {% for manifestation in manifestations|slice(0, 20) %}
+            {"id": {{ manifestation.id }}, "title": {{ manifestation.title|json_encode|raw }}, "identifier": {{ manifestation.identifier|json_encode|raw }}, "location3": {{ manifestation.location3|default('')|json_encode|raw }}, "url": {{ path('app_manifestation_show', {'id': manifestation.id})|json_encode|raw }} }{% if not loop.last %},{% endif %}
+        {% endfor %}
+        ]
     </script>
 {% endif %}

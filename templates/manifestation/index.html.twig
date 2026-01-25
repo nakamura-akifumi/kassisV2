@@ -4,6 +4,7 @@
 
 {% block stylesheets %}
     {{ parent() }}
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
     <style>
         .view-mode-buttons .btn.active { background-color: #007bff; color: white; }
         .panel-container { display: flex; flex-wrap: wrap; gap: 20px; }
@@ -12,6 +13,14 @@
         .panel-item .panel-image-container { width: 100%; height: 180px; display: flex; justify-content: center; align-items: center; margin-bottom: 10px; background-color: #f1f3f5; border-radius: 4px; overflow: hidden; }
         .panel-item img { max-width: 100%; max-height: 100%; object-fit: contain; }
         #grid-container { width: 100%; height: 600px; border: 1px solid #ddd; }
+        .map-layout { display: grid; grid-template-columns: minmax(280px, 1fr) minmax(280px, 1fr); gap: 16px; }
+        .map-container { width: 100%; height: 520px; border: 1px solid #ddd; border-radius: 6px; }
+        .map-results { overflow: auto; max-height: 520px; border: 1px solid #eee; border-radius: 6px; padding: 8px; }
+        @media (max-width: 992px) {
+            .map-layout { grid-template-columns: 1fr; }
+            .map-container { height: 360px; }
+            .map-results { max-height: none; }
+        }
 
         /* 追加: 詳細ポップアップ（モーダル）を小さめフォントに */
         #manifestationDetailModal .modal-body {
@@ -98,6 +107,9 @@
                         <button type="button" class="btn btn-outline-secondary btn-view-mode {{ (view_mode|default('list')) == 'grid' ? 'active' : '' }}" data-mode="grid" title="グリッド形式">
                             <i class="fas fa-table"></i>
                         </button>
+                        <button type="button" class="btn btn-outline-secondary btn-view-mode {{ (view_mode|default('list')) == 'map' ? 'active' : '' }}" data-mode="map" title="地図表示">
+                            <i class="fas fa-map"></i>
+                        </button>
                     </div>
                 </div>
                 <div class="d-flex align-items-center">
@@ -148,15 +160,17 @@
         </div>
     {% endblock %}
 
-    {% block javascripts %}
-        {{ parent() }}
-        <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                let grid = null;
+{% block javascripts %}
+    {{ parent() }}
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            let grid = null;
+            let activeMap = null;
 
-                const searchForm = document.getElementById('search_form');
-                const searchResults = document.getElementById('search-results');
-                const loading = document.getElementById('loading');
+            const searchForm = document.getElementById('search_form');
+            const searchResults = document.getElementById('search-results');
+            const loading = document.getElementById('loading');
 
                 const modeInput = document.getElementById('search_mode');
                 const toggleBtn = document.getElementById('toggle_search_mode');
@@ -194,6 +208,85 @@
                         .replaceAll('>', '&gt;')
                         .replaceAll('"', '&quot;')
                         .replaceAll("'", '&#039;');
+                }
+
+                function loadPanelImages() {
+                    document.querySelectorAll('.manifestation-panel-img').forEach(img => {
+                        const isbn = img.getAttribute('data-isbn');
+                        const id = img.id.replace('img-isbn-', '');
+                        const fallback = document.getElementById('img-fallback-' + id);
+
+                        if (!isbn) return;
+
+                        fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}`)
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.totalItems > 0 && data.items && data.items[0].volumeInfo.imageLinks && data.items[0].volumeInfo.imageLinks.thumbnail) {
+                                    const imgUrl = data.items[0].volumeInfo.imageLinks.thumbnail.replace('http:', 'https:');
+                                    img.src = imgUrl;
+                                    img.onload = () => {
+                                        if (img.naturalWidth > 1) {
+                                            img.classList.remove('d-none');
+                                            if (fallback) fallback.classList.add('d-none');
+                                        }
+                                    };
+                                }
+                            })
+                            .catch(err => console.error('Google Books API Error for ' + isbn, err));
+                    });
+                }
+
+                function parseLocation3(value) {
+                    if (!value) return null;
+                    const parts = String(value).split(/[\\/,\s]+/).filter(Boolean);
+                    if (parts.length < 2) return null;
+                    const lat = parseFloat(parts[0]);
+                    const lng = parseFloat(parts[1]);
+                    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+                    if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return null;
+                    return [lat, lng];
+                }
+
+                function initMapView() {
+                    const mapElement = document.getElementById('map-container');
+                    if (!mapElement || !window.L) return;
+
+                    const dataEl = document.getElementById('map-data');
+                    let items = [];
+                    if (dataEl && dataEl.textContent) {
+                        try {
+                            items = JSON.parse(dataEl.textContent);
+                        } catch (e) {
+                            items = [];
+                        }
+                    }
+
+                    if (activeMap) {
+                        activeMap.remove();
+                        activeMap = null;
+                    }
+
+                    activeMap = L.map(mapElement);
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: '&copy; OpenStreetMap contributors',
+                        maxZoom: 19,
+                    }).addTo(activeMap);
+
+                    const bounds = [];
+                    items.forEach(item => {
+                        const coords = parseLocation3(item.location3);
+                        if (!coords) return;
+                        bounds.push(coords);
+                        const title = escapeHtml(item.title || '');
+                        const link = item.url ? `<a href="${escapeHtml(item.url)}">${title || '詳細'}</a>` : title;
+                        L.marker(coords).addTo(activeMap).bindPopup(link);
+                    });
+
+                    if (bounds.length > 0) {
+                        activeMap.fitBounds(bounds, { padding: [24, 24] });
+                    } else {
+                        activeMap.setView([35.681, 139.767], 11);
+                    }
                 }
 
                 function renderKeyValueDl(data, items) {
@@ -356,7 +449,7 @@
                     e.preventDefault();
 
                     const formData = new FormData(searchForm);
-                    const viewMode = '{{ view_mode|default("list") }}';
+                    const viewMode = (searchForm.querySelector('input[name="view_mode"]')?.value) || '{{ view_mode|default("list") }}';
                     formData.set('view_mode', viewMode);
                     const queryParams = new URLSearchParams(formData);
 
@@ -369,10 +462,18 @@
                         .then(response => (viewMode === 'grid' ? response.json() : response.text()))
                         .then(data => {
                             loading.classList.add('d-none');
-                            if (viewMode === 'grid') renderGrid(data);
-                            else searchResults.innerHTML = data;
+                            if (viewMode === 'grid') {
+                                renderGrid(data);
+                                return;
+                            }
+                            searchResults.innerHTML = data;
+                            loadPanelImages();
+                            initMapView();
                         });
                 });
+
+                loadPanelImages();
+                initMapView();
 
                 // 初期状態が grid の場合は自動実行
                 if ('{{ view_mode|default("list") }}' === 'grid') {
