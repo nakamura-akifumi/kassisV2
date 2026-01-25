@@ -74,6 +74,9 @@ class Manifestation
     private ?string $location2 = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    private ?string $location3 = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
     private ?string $contributor1 = null;
 
     #[ORM\Column(length: 255, nullable: true)]
@@ -300,6 +303,17 @@ class Manifestation
     public function setLocation2(?string $location2): static
     {
         $this->location2 = $location2;
+        return $this;
+    }
+
+    public function getLocation3(): ?string
+    {
+        return $this->location3;
+    }
+
+    public function setLocation3(?string $location3): static
+    {
+        $this->location3 = $location3;
         return $this;
     }
 

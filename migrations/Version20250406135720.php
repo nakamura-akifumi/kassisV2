@@ -41,6 +41,7 @@ final class Version20250406135720 extends AbstractMigration
                               class2 VARCHAR(32) DEFAULT NULL,
                               location1 VARCHAR(255) DEFAULT NULL,
                               location2 VARCHAR(255) DEFAULT NULL,
+                              location3 VARCHAR(255) DEFAULT NULL,
                               contributor1 VARCHAR(255) DEFAULT NULL,
                               contributor2 VARCHAR(255) DEFAULT NULL,
                               release_date_string VARCHAR(255) DEFAULT NULL,

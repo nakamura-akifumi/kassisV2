@@ -246,7 +246,11 @@ class NdlSearchService
     {
         $manifestation->setTitle($bookData['title'] ?? '');
         $manifestation->setTitleTranscription($bookData['title_transcription'] ?? '');
-        $manifestation->setIdentifier($bookData['identifier'] ?? '');
+        $identifier = $bookData['identifier'] ?? '';
+        if ($identifier !== '') {
+            $identifier = str_replace('-', '', $identifier);
+        }
+        $manifestation->setIdentifier($identifier);
         $manifestation->setExternalIdentifier1($bookData['external_identifier1'] ?? '');
         $manifestation->setRecordSource($bookData['link'] ?? '');
         $manifestation->setType1('図書');

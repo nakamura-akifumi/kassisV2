@@ -37,6 +37,7 @@ class NdlImportService
         if ($normalizedIsbn === null) {
             return null;
         }
+        $normalizedRawIsbn = preg_replace('/[^0-9X]/', '', $rawIsbn) ?? '';
 
         $repository = $this->entityManager->getRepository(Manifestation::class);
 
@@ -49,6 +50,12 @@ class NdlImportService
         $existing = $repository->findOneBy(['identifier' => $rawIsbn]);
         if ($existing !== null) {
             return $existing;
+        }
+        if ($normalizedRawIsbn !== '') {
+            $existing = $repository->findOneBy(['identifier' => $normalizedRawIsbn]);
+            if ($existing !== null) {
+                return $existing;
+            }
         }
 
         return $repository->findOneBy(['identifier' => $normalizedIsbn]);

@@ -28,20 +28,9 @@ class FileService
         private TranslatorInterface $t,
         private EntityManagerInterface $entityManager,
         private LoggerInterface        $logger,
+        private NumberingService $numberingService,
     ) {
     }
-
-    private array $keyList = ['id','title','title_transcription','identifier',
-                'external_identifier1','external_identifier2','external_identifier3',
-                'description',
-                'buyer','buyer_identifier','purchase_date','record_source',
-                'type1','type2','type3','type4',
-                'class1','class2','extinfo',
-                'location1','location2', 'contributor1','contributor2',
-                'release_date_string',
-                'status1','status2','price',
-                'created_at','updated_at'
-        ];
 
     /**
      * Manifestation のリストからエクスポートファイルを生成し、一時ファイルのパスを返す。
@@ -55,40 +44,10 @@ class FileService
         $sheet = $spreadsheet->getActiveSheet();
 
         // 項目定義とラベルのマッピング
-        $allColumns = [
-            'id' => ['label' => 'ID', 'getter' => 'getId'],
-            'title' => ['label' => $this->t->trans('Model.Manifestation.fields.Title'), 'getter' => 'getTitle'],
-            'titleTranscription' => ['label' => $this->t->trans('Model.Manifestation.fields.Title_Transcription'), 'getter' => 'getTitleTranscription'],
-            'identifier' => ['label' => $this->t->trans('Model.Manifestation.fields.Identifier'), 'getter' => 'getIdentifier'],
-            'externalIdentifier1' => ['label' => $this->t->trans('Model.Manifestation.fields.External_identifier1'), 'getter' => 'getExternalIdentifier1'],
-            'externalIdentifier2' => ['label' => $this->t->trans('Model.Manifestation.fields.External_identifier2'), 'getter' => 'getExternalIdentifier2'],
-            'externalIdentifier3' => ['label' => $this->t->trans('Model.Manifestation.fields.External_identifier3'), 'getter' => 'getExternalIdentifier3'],
-            'description' => ['label' => $this->t->trans('Model.Manifestation.fields.Description'), 'getter' => 'getDescription'],
-            'buyer' => ['label' => $this->t->trans('Model.Manifestation.fields.Buyer'), 'getter' => 'getBuyer'],
-            'buyerIdentifier' => ['label' => $this->t->trans('Model.Manifestation.fields.Buyer_identifier'), 'getter' => 'getBuyerIdentifier'],
-            'purchaseDate' => ['label' => $this->t->trans('Model.Manifestation.fields.Purchase_date'), 'getter' => 'getPurchaseDate'],
-            'recordSource' => ['label' => $this->t->trans('Model.Manifestation.fields.RecordSource'), 'getter' => 'getRecordSource'],
-            'type1' => ['label' => $this->t->trans('Model.Manifestation.fields.Type1'), 'getter' => 'getType1'],
-            'type2' => ['label' => $this->t->trans('Model.Manifestation.fields.Type2'), 'getter' => 'getType2'],
-            'type3' => ['label' => $this->t->trans('Model.Manifestation.fields.Type3'), 'getter' => 'getType3'],
-            'type4' => ['label' => $this->t->trans('Model.Manifestation.fields.Type4'), 'getter' => 'getType4'],
-            'class1' => ['label' => $this->t->trans('Model.Manifestation.fields.Class1'), 'getter' => 'getClass1'],
-            'class2' => ['label' => $this->t->trans('Model.Manifestation.fields.Class2'), 'getter' => 'getClass2'],
-            'extinfo' => ['label' => $this->t->trans('Model.Manifestation.fields.Extinfo'), 'getter' => 'getExtinfo'],
-            'location1' => ['label' => $this->t->trans('Model.Manifestation.fields.Location1'), 'getter' => 'getLocation1'],
-            'location2' => ['label' => $this->t->trans('Model.Manifestation.fields.Location2'), 'getter' => 'getLocation2'],
-            'contributor1' => ['label' => $this->t->trans('Model.Manifestation.fields.Contributor1'), 'getter' => 'getContributor1'],
-            'contributor2' => ['label' => $this->t->trans('Model.Manifestation.fields.Contributor2'), 'getter' => 'getContributor2'],
-            'status1' => ['label' => $this->t->trans('Model.Manifestation.fields.Status1'), 'getter' => 'getStatus1'],
-            'status2' => ['label' => $this->t->trans('Model.Manifestation.fields.Status2'), 'getter' => 'getStatus2'],
-            'releaseDateString' => ['label' => $this->t->trans('Model.Manifestation.fields.ReleaseDateString'), 'getter' => 'getReleaseDateString'],
-            'price' => ['label' => $this->t->trans('Model.Manifestation.fields.Price'), 'getter' => 'getPrice'],
-            'createdAt' => ['label' => $this->t->trans('Model.Manifestation.fields.CreatedAt'), 'getter' => 'getCreatedAt'],
-            'updatedAt' => ['label' => $this->t->trans('Model.Manifestation.fields.UpdatedAt'), 'getter' => 'getUpdatedAt'],
-        ];
+        $allColumns = ManifestationFileColumns::getExportColumns($this->t);
 
         // 必須項目
-        $required = ['id', 'title', 'identifier'];
+        $required = ManifestationFileColumns::REQUIRED_EXPORT_KEYS;
         // 順番維持のため指示カラム列に必須列を追加する。
         $selectedColumns = array_unique(array_merge($columns, $required));
         // ヘッダー行の書き込み
@@ -156,7 +115,7 @@ class FileService
     private function generateFreshHash(): array
     {
         $hash = [];
-        foreach($this->keyList as $val){
+        foreach (ManifestationFileColumns::getImportKeyList() as $val) {
             $hash[$val] = null;
         }
         return $hash;
@@ -207,7 +166,7 @@ class FileService
                 }
 
                 $cellvals = $this->generateFreshHash();
-                foreach($this->keyList as $val){
+                foreach (ManifestationFileColumns::getImportKeyList() as $val) {
                     if (isset($colMap[$val])) {
                         $cellvals[$val] = $this->getCellValue($row, $colMap[$val]);
                     }
@@ -244,13 +203,17 @@ class FileService
 
                         $manifestation = $ndlSearchService->createManifestation($bookData);
                         if (isset($cellvals['identifier'])) {
-                            $manifestation->setIdentifier($cellvals['identifier']);
+                            $normalizedIdentifier = $this->normalizeIdentifier($cellvals['identifier'], $cellvals['external_identifier1']);
+                            $manifestation->setIdentifier($normalizedIdentifier);
                         } else {
-                            $manifestation->setIdentifier($this->generateIdentifier($cellvals['external_identifier1']));
+                            $manifestation->setIdentifier(
+                                $this->numberingService->generateIdentifier($cellvals['external_identifier1'])
+                            );
                         }
                     } else {
                         if (isset($cellvals['identifier'])) {
-                            $manifestation = $this->entityManager->getRepository(Manifestation::class)->findOneBy(["identifier" => $cellvals['identifier']]);
+                            $normalizedIdentifier = $this->normalizeIdentifier($cellvals['identifier'], $cellvals['external_identifier1']);
+                            $manifestation = $this->entityManager->getRepository(Manifestation::class)->findOneBy(["identifier" => $normalizedIdentifier]);
                         }
                         if ($manifestation === null) {
                             $manifestation = new Manifestation();
@@ -258,9 +221,12 @@ class FileService
                         $manifestation->setTitle($cellvals['title']);
                         $manifestation->setTitleTranscription($cellvals['title_transcription']);
                         if (isset($cellvals['identifier'])) {
-                            $manifestation->setIdentifier($cellvals['identifier']);
+                            $normalizedIdentifier = $this->normalizeIdentifier($cellvals['identifier'], $cellvals['external_identifier1']);
+                            $manifestation->setIdentifier($normalizedIdentifier);
                         } else {
-                            $manifestation->setIdentifier($this->generateIdentifier($cellvals['external_identifier1']));
+                            $manifestation->setIdentifier(
+                                $this->numberingService->generateIdentifier($cellvals['external_identifier1'])
+                            );
                         }
                         $manifestation->setExternalIdentifier1($cellvals['external_identifier1']);
                         $manifestation->setType1($cellvals['type1']);
@@ -322,6 +288,9 @@ class FileService
                     if (isset($cellvals['location2'])) {
                         $manifestation->setLocation2($cellvals['location2']);
                     }
+                    if (isset($cellvals['location3'])) {
+                        $manifestation->setLocation3($cellvals['location3']);
+                    }
                     if (isset($cellvals['status1'])) {
                         $manifestation->setStatus1($cellvals['status1']);
                     }
@@ -381,38 +350,15 @@ class FileService
     private function buildColumnMapFromHeader(array $headerRow): array
     {
         $map = $this->generateFreshHash();
+        $labelMap = ManifestationFileColumns::getImportHeaderLabelMap($this->t);
         foreach ($headerRow as $col => $value) {
             $label = trim((string) $value);
-
-            if ($label === 'ID' || $label === 'id') $map['id'] = $col;
-            if ($label === $this->t->trans('Model.Manifestation.fields.Title')) $map['title'] = $col;
-            if ($label === $this->t->trans('Model.Manifestation.fields.Title_Transcription')) $map["title_transcription"] = $col;
-            if ($label === $this->t->trans('Model.Manifestation.fields.Identifier')) $map['identifier'] = $col;
-            if ($label === $this->t->trans('Model.Manifestation.fields.External_identifier1')) $map['external_identifier1'] = $col;
-            if ($label === $this->t->trans('Model.Manifestation.fields.External_identifier2')) $map['external_identifier2'] = $col;
-            if ($label === $this->t->trans('Model.Manifestation.fields.External_identifier3')) $map['external_identifier3'] = $col;
-            if ($label === $this->t->trans('Model.Manifestation.fields.Description')) $map['description'] = $col;
-            if ($label === $this->t->trans('Model.Manifestation.fields.Buyer')) $map['buyer'] = $col;
-            if ($label === $this->t->trans('Model.Manifestation.fields.Buyer_identifier')) $map['buyer_identifier'] = $col;
-            if ($label === $this->t->trans('Model.Manifestation.fields.Purchase_date')) $map['purchase_date'] = $col;
-            if ($label === $this->t->trans('Model.Manifestation.fields.RecordSource')) $map['record_source'] = $col;
-            if ($label === $this->t->trans('Model.Manifestation.fields.Type1')) $map['type1'] = $col;
-            if ($label === $this->t->trans('Model.Manifestation.fields.Type2')) $map['type2'] = $col;
-            if ($label === $this->t->trans('Model.Manifestation.fields.Type3')) $map['type3'] = $col;
-            if ($label === $this->t->trans('Model.Manifestation.fields.Type4')) $map['type4'] = $col;
-            if ($label === $this->t->trans('Model.Manifestation.fields.Class1')) $map['class1'] = $col;
-            if ($label === $this->t->trans('Model.Manifestation.fields.Class2')) $map['class2'] = $col;
-            if ($label === $this->t->trans('Model.Manifestation.fields.Extinfo')) $map['extinfo'] = $col;
-            if ($label === $this->t->trans('Model.Manifestation.fields.Location1')) $map['location1'] = $col;
-            if ($label === $this->t->trans('Model.Manifestation.fields.Location2')) $map['location2'] = $col;
-            if ($label === $this->t->trans('Model.Manifestation.fields.Contributor1')) $map['contributor1'] = $col;
-            if ($label === $this->t->trans('Model.Manifestation.fields.Contributor2')) $map['contributor2'] = $col;
-            if ($label === $this->t->trans('Model.Manifestation.fields.Status1')) $map['status1'] = $col;
-            if ($label === $this->t->trans('Model.Manifestation.fields.Status2')) $map['status2'] = $col;
-            if ($label === $this->t->trans('Model.Manifestation.fields.ReleaseDateString')) $map['release_date_string'] = $col;
-            if ($label === $this->t->trans('Model.Manifestation.fields.Price')) $map['price'] = $col;
-            if ($label === $this->t->trans('Model.Manifestation.fields.CreatedAt')) $map['created_at'] = $col;
-            if ($label === $this->t->trans('Model.Manifestation.fields.UpdatedAt')) $map['updated_at'] = $col;
+            if ($label === '') {
+                continue;
+            }
+            if (isset($labelMap[$label])) {
+                $map[$labelMap[$label]] = $col;
+            }
         }
 
         return $map;
@@ -447,18 +393,15 @@ class FileService
         return $v === null || trim($v) === '';
     }
 
-    private function generateIdentifier(?string $isbn, ?bool $withUnique = true): string
+    private function normalizeIdentifier(?string $identifier, ?string $isbn): ?string
     {
-        $base = null;
-
-        if (!$this->isBlank($isbn)) {
-            $base = preg_replace('/[^0-9Xx]/', '', (string) $isbn);
+        if ($identifier === null) {
+            return null;
         }
-
-        // 衝突を避けるため末尾にユニーク値を付与（identifier が unique のため）
-        if ($withUnique) {
-            $base = rtrim((string) $base, '-') . '-' . bin2hex(random_bytes(4));
+        if ($this->isBlank($isbn)) {
+            return $identifier;
         }
-        return $base;
+        return str_replace('-', '', $identifier);
     }
+
 }

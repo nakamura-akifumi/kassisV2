@@ -6,6 +6,7 @@ use App\Form\ManifestationFileExportFormType;
 use App\Form\ManifestationFileImportFormType;
 use App\Repository\ManifestationRepository;
 use App\Service\FileService;
+use App\Service\ManifestationFileColumns;
 use App\Service\ManifestationSearchQuery;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -69,6 +70,8 @@ class ManifestationExportImportController extends AbstractController
             return $this->render('export/file.html.twig', [
                 'form' => $form->createView(),
                 'query' => $request->query->all(),
+                'exportFields' => ManifestationFileColumns::getExportFormFields(),
+                'requiredColumns' => ManifestationFileColumns::REQUIRED_EXPORT_KEYS,
             ]);
         }
 
@@ -89,6 +92,8 @@ class ManifestationExportImportController extends AbstractController
             return $this->render('export/file.html.twig', [
                 'form' => $form->createView(),
                 'query' => $request->query->all(),
+                'exportFields' => ManifestationFileColumns::getExportFormFields(),
+                'requiredColumns' => ManifestationFileColumns::REQUIRED_EXPORT_KEYS,
             ]);
         }
 
@@ -127,6 +132,8 @@ class ManifestationExportImportController extends AbstractController
             return $this->render('export/file.html.twig', [
                 'form' => $form->createView(),
                 'query' => $request->query->all(),
+                'exportFields' => ManifestationFileColumns::getExportFormFields(),
+                'requiredColumns' => ManifestationFileColumns::REQUIRED_EXPORT_KEYS,
             ]);
         }
     }

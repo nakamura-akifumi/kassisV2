@@ -190,6 +190,7 @@ final class ManifestationController extends AbstractController
             'type2' => $manifestation->getType2(),
             'location1' => $manifestation->getLocation1(),
             'location2' => $manifestation->getLocation2(),
+            'location3' => $manifestation->getLocation3(),
             'contributor1' => $manifestation->getContributor1(),
             'contributor2' => $manifestation->getContributor2(),
             'releaseDateString' => $manifestation->getReleaseDateString(),
@@ -209,10 +210,10 @@ final class ManifestationController extends AbstractController
         ]);
     }
 
-    #[Route('/{id}', name: 'app_manifestation_delete', methods: ['POST'])]
+    #[Route('/{id}/delete', name: 'app_manifestation_delete', methods: ['POST'])]
     public function delete(Request $request, Manifestation $manifestation, EntityManagerInterface $entityManager): Response
     {
-        if ($this->isCsrfTokenValid('delete' . $manifestation->getId(), $request->getPayload()->getString('_token'))) {
+        if ($this->isCsrfTokenValid('delete' . $manifestation->getId(), (string) $request->request->get('_token'))) {
             $entityManager->remove($manifestation);
             $entityManager->flush();
         }

@@ -7,6 +7,9 @@ parameters:
     app.amazon_import.book_only: true
     app.amazon_import.use_ndl: true
     app.enabled_display_modes: grid, list, panel, map
+    app.default_display_mode: grid
+    app.manifestation.identifier_rule: random # uuidv7,numbering,isbn+random(4)
+    app.manifestation.identifier_format: '%010d'
 
 services:
     # default configuration for services in *this* file
@@ -36,6 +39,11 @@ services:
             $logger: '@logger'
             $projectDir: '%kernel.project_dir%'
             $useNdl: '%app.amazon_import.use_ndl%'
+
+    App\Service\NumberingService:
+        arguments:
+            $manifestationIdentifierRule: '%app.manifestation.identifier_rule%'
+            $manifestationIdentifierFormat: '%app.manifestation.identifier_format%'
 
     App\Controller\AmazonImportController:
         arguments:

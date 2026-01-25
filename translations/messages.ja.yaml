@@ -35,6 +35,7 @@ Model:
       Class2: "部類２"
       Location1: "場所１"
       Location2: "場所２"
+      Location3: "場所３"
       Contributor1: "貢献者１"
       Contributor2: "貢献者２"
       Status1: "ステータス１"
