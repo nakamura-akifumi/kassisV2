@@ -47,6 +47,7 @@ class NdlImportController extends AbstractController
                     $importedItems = $session->get('isbn_imported_items', []);
                     $importedIsbn = $manifestation->getExternalIdentifier1() ?? $manifestation->getIdentifier() ?? '';
                     array_unshift($importedItems, [
+                        'id' => $manifestation->getId(),
                         'title' => $manifestation->getTitle() ?? '',
                         'isbn' => $importedIsbn,
                     ]);

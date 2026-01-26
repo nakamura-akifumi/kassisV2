@@ -88,6 +88,9 @@ class Manifestation
     #[ORM\Column(type: Types::DECIMAL, precision: 11, scale: 2, nullable: true)]
     private ?string $price = null;
 
+    #[ORM\Column(length: 3, nullable: true)]
+    private ?string $price_currency = null;
+
     #[ORM\Column(length: 32, nullable: true)]
     private ?string $class1 = null;
 
@@ -356,7 +359,13 @@ class Manifestation
             return null;
         }
 
-        return number_format($this->price, 0, '.', ',') . '円';
+        $formatted = number_format($this->price, 0, '.', ',');
+        $currency = $this->price_currency !== null ? strtoupper($this->price_currency) : null;
+        if ($currency === null || $currency === '' || $currency === 'JPY') {
+            return $formatted . '円';
+        }
+
+        return $formatted . ' ' . $currency;
     }
 
     public function getPrice(): ?string
@@ -374,6 +383,23 @@ class Manifestation
 
         $this->price = $price !== '' && $price !== null ? (string)$price : null;
 
+        return $this;
+    }
+
+    public function getPriceCurrency(): ?string
+    {
+        return $this->price_currency;
+    }
+
+    public function setPriceCurrency(?string $price_currency): static
+    {
+        if ($price_currency !== null) {
+            $price_currency = strtoupper(trim($price_currency));
+            if ($price_currency === '') {
+                $price_currency = null;
+            }
+        }
+        $this->price_currency = $price_currency;
         return $this;
     }
 
@@ -512,9 +538,13 @@ class Manifestation
             return null;
         }
 
-        // AmazonのドメインはbuderのJapanかどうかによって変わる可能性があるため、
-        // 日本のAmazonドメインをデフォルトとして使用
-        return 'https://www.amazon.co.jp/dp/' . $this->getExternalIdentifier3();
+        $domain = 'amazon.co.jp';
+        $buyer = $this->buyer ?? '';
+        if ($buyer !== '' && str_contains(strtolower($buyer), 'amazon.com')) {
+            $domain = 'amazon.com';
+        }
+
+        return 'https://www.' . $domain . '/dp/' . $this->getExternalIdentifier3();
     }
 
 }

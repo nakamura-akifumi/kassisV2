@@ -1,4 +1,4 @@
 <form method="post" action="{{ path('app_manifestation_delete', {'id': manifestation.id}) }}">
     <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ manifestation.id) }}">
-    <button class="btn {{ btn_class|default('btn-danger') }}">Delete</button>
+    <button class="btn {{ btn_class|default('btn-danger') }}">{{ 'Screen.Manifestation.Delete'|trans }}</button>
 </form>

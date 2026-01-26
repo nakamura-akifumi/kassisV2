@@ -37,11 +37,11 @@
 {% endblock %}
 
 {% block body %}
-    <div class="container mt-4">
+    <div class="container mt-1">
         <!-- 検索フォーム -->
-        <div class="card mt-4 mb-4">
-            <div class="card-header">
-                <h5>書誌検索</h5>
+        <div class="card mt-2 mb-2">
+            <div class="card-header py-1">
+                <h5 class="mb-0 fs-6">書誌検索</h5>
             </div>
 
             <div class="card-body">
@@ -83,10 +83,10 @@
                     </div>
 
                     <div class="d-flex justify-content-between">
-                        <button class="btn btn-outline-secondary btn-sm" type="button" id="toggle_search_mode">
+                        <button class="btn btn-outline-secondary btn-sm py-1" type="button" id="toggle_search_mode" accesskey="m" title="Alt+M">
                             <i class="bi bi-gear"></i> モード切替
                         </button>
-                        <button type="submit" class="btn btn-primary">
+                        <button type="submit" class="btn btn-primary btn-sm py-1">
                             <i class="bi bi-search"></i> {{ 'Model.actions.search'|trans|default('検索実行') }}
                         </button>
                     </div>
@@ -112,6 +112,7 @@
                         </button>
                     </div>
                 </div>
+                {% set current_sort = search_params.sort|default('created_at_asc') %}
                 <div class="d-flex align-items-center">
                     <span class="badge bg-secondary me-3" id="result-count">
                             検索結果: {{ manifestations|length }} 件
@@ -119,11 +120,21 @@
                     <button type="button" id="btn-export" class="btn btn-outline-success">
                         <i class="fas fa-file-export"></i> エクスポート
                     </button>
+                    <div class="ms-3">
+                        <select name="sort" class="form-select form-select-sm" form="search_form">
+                            <option value="created_at_asc" {{ current_sort == 'created_at_asc' ? 'selected' : '' }}>情報作成の昇順</option>
+                            <option value="created_at_desc" {{ current_sort == 'created_at_desc' ? 'selected' : '' }}>情報作成の降順</option>
+                            <option value="title_asc" {{ current_sort == 'title_asc' ? 'selected' : '' }}>タイトル名の50音順</option>
+                            <option value="title_desc" {{ current_sort == 'title_desc' ? 'selected' : '' }}>タイトル名の50音降順</option>
+                            <option value="identifier_asc" {{ current_sort == 'identifier_asc' ? 'selected' : '' }}>識別子の昇順</option>
+                            <option value="identifier_desc" {{ current_sort == 'identifier_desc' ? 'selected' : '' }}>識別子の降順</option>
+                        </select>
+                    </div>
                 </div>
             </div>
 
             <!-- 検索結果を表示するエリア -->
-            <div id="search-results" class="mt-4">
+            <div id="search-results" class="mt-2">
                 {% if (view_mode|default('list')) != 'grid' %}
                     {% include 'manifestation/_results_list.html.twig' %}
                 {% else %}
@@ -168,9 +179,10 @@
             let grid = null;
             let activeMap = null;
 
-            const searchForm = document.getElementById('search_form');
-            const searchResults = document.getElementById('search-results');
-            const loading = document.getElementById('loading');
+                const searchForm = document.getElementById('search_form');
+                const searchResults = document.getElementById('search-results');
+                const loading = document.getElementById('loading');
+                const sortSelect = document.querySelector('select[name="sort"]');
 
                 const modeInput = document.getElementById('search_mode');
                 const toggleBtn = document.getElementById('toggle_search_mode');
@@ -188,9 +200,19 @@
                         wrappers[m].querySelectorAll('input, textarea, select').forEach(el => el.disabled = !isTarget);
                     });
                     modeInput.value = newMode;
+                    focusFirstSearchInput();
+                }
+
+                function focusFirstSearchInput() {
+                    if (!searchForm) return;
+                    const target = searchForm.querySelector('.search-wrapper:not(.d-none) input:not([disabled]), .search-wrapper:not(.d-none) textarea:not([disabled])');
+                    if (target) {
+                        target.focus();
+                    }
                 }
 
                 switchMode(modeInput.value);
+                focusFirstSearchInput();
 
                 toggleBtn.addEventListener('click', function() {
                     const current = modeInput.value;
@@ -198,6 +220,13 @@
                     if (current === 'simple') next = 'multi';
                     else if (current === 'multi') next = 'advanced';
                     switchMode(next);
+                });
+
+                document.addEventListener('keydown', function(e) {
+                    if (!e.altKey || e.ctrlKey || e.metaKey) return;
+                    if (e.key !== 'm' && e.key !== 'M') return;
+                    e.preventDefault();
+                    toggleBtn.click();
                 });
 
                 function escapeHtml(str) {
@@ -336,6 +365,7 @@
                             { key: 'contributor2', label: '著者/寄与者2' },
                             { key: 'releaseDateString', label: '出版日（文字列）' },
                             { key: 'price', label: '価格' },
+                            { key: 'priceCurrency', label: '通貨' },
                             { key: 'status1', label: 'ステータス1' },
                             { key: 'status2', label: 'ステータス2' },
                             { key: 'updatedAt', label: '更新日時' },
@@ -380,6 +410,18 @@
                         header: header,
                         records: normalizedRecords,
                         frozenColCount: 2, // 左端「詳」＋IDを固定
+                        defaultRowHeight: 28,
+                        headerRowHeight: 28,
+                        theme: {
+                            defaultStyle: {
+                                font: '12px "Noto Sans JP", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif',
+                            },
+                            header: {
+                                defaultStyle: {
+                                    font: '12px "Noto Sans JP", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif',
+                                },
+                            },
+                        },
                     });
 
                     // 追加：コンソールから触れるようにする
@@ -471,6 +513,12 @@
                             initMapView();
                         });
                 });
+
+                if (sortSelect) {
+                    sortSelect.addEventListener('change', function() {
+                        searchForm.dispatchEvent(new Event('submit'));
+                    });
+                }
 
                 loadPanelImages();
                 initMapView();

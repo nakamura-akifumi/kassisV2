@@ -15,6 +15,7 @@
             border-bottom: 2px solid #3498db;
             padding-bottom: 0.5rem;
             margin-bottom: 1.5rem;
+            font-size: 1.6rem;
         }
 
         .detail-table {
@@ -182,6 +183,11 @@
             margin-top: 2rem;
             padding-top: 1.5rem;
             border-top: 1px solid #dee2e6;
+            font-size: 0.9rem;
+        }
+
+        .attachment-section h4 {
+            font-size: 1rem;
         }
 
         .attachment-item {
@@ -298,6 +304,10 @@
                         <tr>
                             <th>{{ 'Model.Manifestation.fields.Price' | trans }}</th>
                             <td class="price-info">{{ manifestation.formattedPrice }}</td>
+                        </tr>
+                        <tr>
+                            <th>{{ 'Model.Manifestation.fields.PriceCurrency' | trans }}</th>
+                            <td>{{ manifestation.priceCurrency }}</td>
                         </tr>
                         <tr>
                             <th>{{ 'Model.Manifestation.fields.Type1' | trans }}</th>

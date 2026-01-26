@@ -151,6 +151,12 @@ final class ManifestationFileColumns
             'getter' => 'getPrice',
             'importKey' => 'price',
         ],
+        'priceCurrency' => [
+            'labelKey' => 'Model.Manifestation.fields.PriceCurrency',
+            'getter' => 'getPriceCurrency',
+            'importKey' => 'price_currency',
+            'headerAliases' => ['Currency'],
+        ],
         'createdAt' => [
             'labelKey' => 'Model.Manifestation.fields.CreatedAt',
             'getter' => 'getCreatedAt',

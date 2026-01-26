@@ -58,7 +58,15 @@
                         <ul class="list-group">
                             {% for item in imported_items %}
                                 <li class="list-group-item py-1">
-                                    <div class="fw-bold small">{{ item.title }}</div>
+                                    {% if item.id is defined and item.id %}
+                                        <div class="fw-bold small">
+                                            <a href="{{ path('app_manifestation_show', {'id': item.id}) }}" class="text-decoration-none">
+                                                {{ item.title }}
+                                            </a>
+                                        </div>
+                                    {% else %}
+                                        <div class="fw-bold small">{{ item.title }}</div>
+                                    {% endif %}
                                     <div class="small text-muted">ISBN: {{ item.isbn }}</div>
                                 </li>
                             {% endfor %}

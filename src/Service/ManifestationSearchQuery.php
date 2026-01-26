@@ -9,6 +9,7 @@ class ManifestationSearchQuery
     public ?string $externalId1 = null;
     public ?string $type1 = null;
     public ?string $type2 = null;
+    public ?string $sort = null;
     public string $mode = 'simple'; // 'simple', 'multi', 'advanced'
 
     public function hasSearchCriteria(): bool
@@ -30,6 +31,7 @@ class ManifestationSearchQuery
         $query->externalId1 = $params['external_identifier1'] ?? null;
         $query->type1 = $params['type1'] ?? null;
         $query->type2 = $params['type2'] ?? null;
+        $query->sort = $params['sort'] ?? null;
         $query->mode = $params['mode'] ?? 'simple';
 
         return $query;

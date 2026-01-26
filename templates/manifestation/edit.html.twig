@@ -24,7 +24,7 @@
 
             <div class="card-footer bg-light d-flex justify-content-between">
                 <a href="{{ path('app_manifestation_index') }}" class="btn btn-outline-secondary">
-                    <i class="fas fa-arrow-left me-1"></i> 一覧に戻る
+                    <i class="fas fa-arrow-left me-1"></i> {{ 'Screen.Manifestation.BackToResult' | trans }}
                 </a>
 
                 <div class="btn-group">
@@ -32,7 +32,7 @@
                         <i class="fas fa-eye me-1"></i> 詳細を表示
                     </a>
                     <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
-                        <i class="fas fa-trash-alt me-1"></i> 削除
+                        <i class="fas fa-trash-alt me-1"></i> {{ 'Screen.Manifestation.Delete'|trans }}
                     </button>
                 </div>
             </div>
@@ -48,11 +48,11 @@
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <p>この書誌情報を本当に削除しますか？</p>
+                    <p>この情報を本当に削除しますか？</p>
                     <p class="text-danger"><strong>注意:</strong> この操作は取り消せません。</p>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'Screen.Manifestation.Cancel' | trans }}</button>
                     {{ include('manifestation/_delete_form.html.twig', {'btn_class': 'btn-danger'}) }}
                 </div>
             </div>

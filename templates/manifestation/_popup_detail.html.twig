@@ -85,6 +85,18 @@
                     header: header,
                     records: normalizedRecords,
                     frozenColCount: 2, // 左端「詳細」＋IDを固定
+                    defaultRowHeight: 28,
+                    headerRowHeight: 28,
+                    theme: {
+                        defaultStyle: {
+                            font: '12px "Noto Sans JP", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif',
+                        },
+                        header: {
+                            defaultStyle: {
+                                font: '12px "Noto Sans JP", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif',
+                            },
+                        },
+                    },
                 });
 
                 // クリック：左端列（col==0）ならポップアップ

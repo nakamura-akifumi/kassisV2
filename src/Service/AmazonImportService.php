@@ -222,6 +222,7 @@ class AmazonImportService
             $orderDateIndex = array_search('OrderDate', $headers);
             $orderIdIndex = array_search('Order ID', $headers);
             $priceIndex = array_search('Total Owed', $headers);
+            $currencyIndex = array_search('Currency', $headers);
             $contributor2Index = array_search('SellerOfRecord', $headers);
         } elseif (in_array($csvFilesWithoutPath, $needRetailFiles)) {
             // Retail
@@ -232,6 +233,7 @@ class AmazonImportService
             $orderDateIndex = array_search('Order Date', $headers);
             $orderIdIndex = array_search('Order ID', $headers);
             $priceIndex = array_search('Total Owed', $headers);
+            $currencyIndex = array_search('Currency', $headers);
             $contributor2Index = null;
 
             $this->logger->debug('@1 Retail headers:'.implode(',', $headers));
@@ -377,6 +379,10 @@ class AmazonImportService
 
                 //
                 $price = $data[$priceIndex];
+                $priceCurrency = null;
+                if ($currencyIndex !== false && !empty($data[$currencyIndex])) {
+                    $priceCurrency = $data[$currencyIndex];
+                }
                 $contributor2 = null;
                 if ($contributor2Index !== false && !empty($data[$contributor2Index])) {
                     $contributor2 = $data[$contributor2Index];
@@ -397,6 +403,7 @@ class AmazonImportService
                     $manifestation->setPurchaseDate($purchaseDate);
                 }
                 $manifestation->setPrice($price);
+                $manifestation->setPriceCurrency($priceCurrency);
                 $manifestation->setStatus1('new');
                 if ($contributor2 !== null) {
                     $manifestation->setContributor2($contributor2);

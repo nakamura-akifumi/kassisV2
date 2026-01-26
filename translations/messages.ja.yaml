@@ -8,6 +8,9 @@ Screen:
     Show: "詳細表示"
     Create: "新規登録"
     NoRecordFound: "該当する情報が見つかりませんでした"
+    Delete: "削除"
+    BackToResult: "一覧に戻る"
+    Cancel: "キャンセル"
 Model:
   actions:
     search: "検索"
@@ -42,6 +45,7 @@ Model:
       Status2: "ステータス２"
       ReleaseDateString: "発売日"
       Price: "金額"
+      PriceCurrency: "通貨"
       Extinfo: "拡張情報"
       CreatedAt: "作成日時"
       UpdatedAt: "更新日時"

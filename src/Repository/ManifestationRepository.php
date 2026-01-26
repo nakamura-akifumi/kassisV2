@@ -5,6 +5,7 @@ namespace App\Repository;
 use App\Entity\Manifestation;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use Doctrine\ORM\QueryBuilder;
 use App\Service\ManifestationSearchQuery;
 
 class ManifestationRepository extends ServiceEntityRepository
@@ -20,6 +21,7 @@ class ManifestationRepository extends ServiceEntityRepository
         ?string $external_id1,
         ?string $type1,
         ?string $type2,
+        ?string $sort,
     ) {
         $qb = $this->createQueryBuilder('m');
 
@@ -78,7 +80,7 @@ class ManifestationRepository extends ServiceEntityRepository
                 ->setParameter('purchase_date_to', $purchase_date_to);
         }
 */
-        return $qb->orderBy('m.id', 'ASC')
+        return $this->applySort($qb, $sort)
             ->getQuery()
             ->getResult();
     }
@@ -89,7 +91,9 @@ class ManifestationRepository extends ServiceEntityRepository
     public function searchByQuery(ManifestationSearchQuery $query): array
     {
         if (!$query->hasSearchCriteria()) {
-            return $this->findAll();
+            return $this->applySort($this->createQueryBuilder('m'), $query->sort)
+                ->getQuery()
+                ->getResult();
         }
 
         $results = $this->advancedSearch(
@@ -98,10 +102,11 @@ class ManifestationRepository extends ServiceEntityRepository
             $query->externalId1,
             $query->type1,
             $query->type2,
+            $query->sort,
         );
 
         // 複数行入力（識別子リスト）の場合は、入力順に並べ替える
-        if ($query->isMultiLine()) {
+        if ($query->isMultiLine() && ($query->sort === null || $query->sort === '')) {
             $keywords = preg_split('/[\s\n\r]+/u', trim($query->q), -1, PREG_SPLIT_NO_EMPTY);
             $keywordOrder = array_flip($keywords);
 
@@ -113,5 +118,33 @@ class ManifestationRepository extends ServiceEntityRepository
         }
 
         return $results;
+    }
+
+    private function applySort(QueryBuilder $qb, ?string $sort): QueryBuilder
+    {
+        $sort = $sort ?? 'created_at_asc';
+        switch ($sort) {
+            case 'created_at_desc':
+                $qb->orderBy('m.created_at', 'DESC');
+                break;
+            case 'title_asc':
+                $qb->orderBy('m.title', 'ASC');
+                break;
+            case 'title_desc':
+                $qb->orderBy('m.title', 'DESC');
+                break;
+            case 'identifier_asc':
+                $qb->orderBy('m.identifier', 'ASC');
+                break;
+            case 'identifier_desc':
+                $qb->orderBy('m.identifier', 'DESC');
+                break;
+            case 'created_at_asc':
+            default:
+                $qb->orderBy('m.created_at', 'ASC');
+                break;
+        }
+
+        return $qb->addOrderBy('m.id', 'ASC');
     }
 }

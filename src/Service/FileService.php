@@ -303,6 +303,9 @@ class FileService
                     if (isset($cellvals['price'])) {
                         $manifestation->setPrice($cellvals['price']);
                     }
+                    if (isset($cellvals['price_currency'])) {
+                        $manifestation->setPriceCurrency($cellvals['price_currency']);
+                    }
 
                     $this->entityManager->persist($manifestation);
                     $result['success']++;

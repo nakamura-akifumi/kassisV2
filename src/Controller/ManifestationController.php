@@ -195,6 +195,7 @@ final class ManifestationController extends AbstractController
             'contributor2' => $manifestation->getContributor2(),
             'releaseDateString' => $manifestation->getReleaseDateString(),
             'price' => $manifestation->getFormattedPrice(),
+            'priceCurrency' => $manifestation->getPriceCurrency(),
             'description' => $manifestation->getDescription(),
             'status1' => $manifestation->getStatus1(),
             'status2' => $manifestation->getStatus2(),

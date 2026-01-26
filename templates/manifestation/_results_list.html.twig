@@ -1,6 +1,6 @@
 {% if (view_mode|default('list')) == 'list' %}
     {% if manifestations|length > 50 %}
-        <div class="alert alert-info py-2 mb-3">
+        <div class="alert alert-info py-2 mb-1">
             <i class="fas fa-info-circle"></i> 検索結果が50件を超えています。最初の50件のみ表示しています。
         </div>
     {% endif %}
@@ -28,7 +28,7 @@
     </table>
 {% elseif view_mode == 'panel' %}
     {% if manifestations|length > 20 %}
-        <div class="alert alert-info py-2 mb-3">
+        <div class="alert alert-info py-2 mb-1">
             <i class="fas fa-info-circle"></i> 検索結果が20件を超えています。最初の20件のみ表示しています。全件確認するにはリスト表示をご利用ください。
         </div>
     {% endif %}
@@ -71,7 +71,7 @@
     </div>
 {% elseif view_mode == 'map' %}
     {% if manifestations|length > 20 %}
-        <div class="alert alert-info py-2 mb-3">
+        <div class="alert alert-info py-2 mb-1">
             <i class="fas fa-info-circle"></i> 検索結果が20件を超えています。最初の20件のみ表示しています。
         </div>
     {% endif %}
