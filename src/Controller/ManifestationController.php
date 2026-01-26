@@ -10,6 +10,7 @@ use App\Repository\ManifestationRepository;
 use App\Service\ManifestationSearchQuery;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\File\Exception\FileException;
 use Symfony\Component\HttpFoundation\Request;
@@ -21,13 +22,18 @@ use Symfony\Component\String\Slugger\SluggerInterface;
 final class ManifestationController extends AbstractController
 {
     #[Route('/manifestation_search', name: 'app_manifestation_search', methods: ['GET'])]
-    public function search(Request $request, ManifestationRepository $manifestationRepository): Response
+    public function search(Request $request, ManifestationRepository $manifestationRepository, ParameterBagInterface $params): Response
     {
         $searchQuery = ManifestationSearchQuery::fromRequest($request->query->all());
         $manifestations = $manifestationRepository->searchByQuery($searchQuery);
         $viewMode = $request->query->get('view_mode', 'list') ?: 'list';
+        $limits = (array) $params->get('app.manifestation.search_limits');
 
         if ($request->isXmlHttpRequest() && $viewMode === 'grid') {
+            $gridLimit = (int) ($limits['grid'] ?? 0);
+            if ($gridLimit > 0) {
+                $manifestations = array_slice($manifestations, 0, $gridLimit);
+            }
             $data = [];
             foreach ($manifestations as $m) {
                 $data[] = [
@@ -45,11 +51,12 @@ final class ManifestationController extends AbstractController
             'manifestations' => $manifestations,
             'search_params' => $request->query->all(),
             'view_mode' => $viewMode,
+            'display_limits' => $limits,
         ]);
     }
 
     #[Route('/manifestation', name: 'app_manifestation_index', methods: ['GET'])]
-    public function index(Request $request, ManifestationRepository $manifestationRepository): Response
+    public function index(Request $request, ManifestationRepository $manifestationRepository, ParameterBagInterface $params): Response
     {
         $searchQuery = ManifestationSearchQuery::fromRequest($request->query->all());
         $manifestations = $manifestationRepository->searchByQuery($searchQuery);
@@ -57,11 +64,13 @@ final class ManifestationController extends AbstractController
         if ($viewMode === null) {
             $viewMode = 'list';
         }
+        $limits = (array) $params->get('app.manifestation.search_limits');
 
         return $this->render('manifestation/index.html.twig', [
             'manifestations' => $manifestations,
             'search_params' => $request->query->all(),
             'view_mode' => $viewMode,
+            'display_limits' => $limits,
         ]);
     }
 
@@ -137,7 +146,7 @@ final class ManifestationController extends AbstractController
     #[Route('/attachment/{id}/delete', name: 'app_manifestation_attachment_delete', methods: ['POST'])]
     public function deleteAttachment(Request $request, ManifestationAttachment $attachment, EntityManagerInterface $entityManager): Response
     {
-        $manifestationId = $attachment->getManifestation()->getId();
+        $manifestationId = $attachment->getManifestation()  ->getId();
 
         if ($this->isCsrfTokenValid('delete' . $attachment->getId(), $request->request->get('_token'))) {
             // ファイルの削除

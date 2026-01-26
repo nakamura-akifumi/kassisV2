@@ -1,7 +1,11 @@
+{% set limits = display_limits|default({}) %}
+{% set list_limit = limits.list|default(50) %}
+{% set panel_limit = limits.panel|default(20) %}
+{% set map_limit = limits.map|default(20) %}
 {% if (view_mode|default('list')) == 'list' %}
-    {% if manifestations|length > 50 %}
+    {% if list_limit > 0 and manifestations|length > list_limit %}
         <div class="alert alert-info py-2 mb-1">
-            <i class="fas fa-info-circle"></i> 検索結果が50件を超えています。最初の50件のみ表示しています。
+            <i class="fas fa-info-circle"></i> 検索結果が{{ list_limit }}件を超えています。最初の{{ list_limit }}件のみ表示しています。
         </div>
     {% endif %}
     <table class="table">
@@ -14,7 +18,7 @@
             </tr>
         </thead>
         <tbody>
-        {% for manifestation in manifestations|slice(0, 50) %}
+        {% for manifestation in list_limit > 0 ? manifestations|slice(0, list_limit) : manifestations %}
             <tr>
                 <td><a href="{{ path('app_manifestation_show', {'id': manifestation.id}) }}">{{ manifestation.title }}</a></td>
                 <td>{{ manifestation.identifier }}</td>
@@ -27,13 +31,13 @@
         </tbody>
     </table>
 {% elseif view_mode == 'panel' %}
-    {% if manifestations|length > 20 %}
+    {% if panel_limit > 0 and manifestations|length > panel_limit %}
         <div class="alert alert-info py-2 mb-1">
-            <i class="fas fa-info-circle"></i> 検索結果が20件を超えています。最初の20件のみ表示しています。全件確認するにはリスト表示をご利用ください。
+            <i class="fas fa-info-circle"></i> 検索結果が{{ panel_limit }}件を超えています。最初の{{ panel_limit }}件のみ表示しています。全件確認するにはリスト表示をご利用ください。
         </div>
     {% endif %}
     <div class="panel-container">
-        {% for manifestation in manifestations|slice(0, 20) %}
+        {% for manifestation in panel_limit > 0 ? manifestations|slice(0, panel_limit) : manifestations %}
             <a href="{{ path('app_manifestation_show', {'id': manifestation.id}) }}" class="panel-item text-decoration-none text-dark">
                 <div class="panel-image-container">
                     {% set first_image = null %}
@@ -70,9 +74,9 @@
         {% endfor %}
     </div>
 {% elseif view_mode == 'map' %}
-    {% if manifestations|length > 20 %}
+    {% if map_limit > 0 and manifestations|length > map_limit %}
         <div class="alert alert-info py-2 mb-1">
-            <i class="fas fa-info-circle"></i> 検索結果が20件を超えています。最初の20件のみ表示しています。
+            <i class="fas fa-info-circle"></i> 検索結果が{{ map_limit }}件を超えています。最初の{{ map_limit }}件のみ表示しています。
         </div>
     {% endif %}
     <div class="map-layout">
@@ -88,7 +92,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                {% for manifestation in manifestations|slice(0, 20) %}
+                {% for manifestation in map_limit > 0 ? manifestations|slice(0, map_limit) : manifestations %}
                     <tr>
                         <td><a href="{{ path('app_manifestation_show', {'id': manifestation.id}) }}">{{ manifestation.title }}</a></td>
                         <td>{{ manifestation.identifier }}</td>
@@ -104,7 +108,7 @@
     </div>
     <script type="application/json" id="map-data">
         [
-        {% for manifestation in manifestations|slice(0, 20) %}
+        {% for manifestation in map_limit > 0 ? manifestations|slice(0, map_limit) : manifestations %}
             {"id": {{ manifestation.id }}, "title": {{ manifestation.title|json_encode|raw }}, "identifier": {{ manifestation.identifier|json_encode|raw }}, "location3": {{ manifestation.location3|default('')|json_encode|raw }}, "url": {{ path('app_manifestation_show', {'id': manifestation.id})|json_encode|raw }} }{% if not loop.last %},{% endif %}
         {% endfor %}
         ]
