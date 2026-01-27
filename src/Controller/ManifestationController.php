@@ -146,7 +146,7 @@ final class ManifestationController extends AbstractController
     #[Route('/attachment/{id}/delete', name: 'app_manifestation_attachment_delete', methods: ['POST'])]
     public function deleteAttachment(Request $request, ManifestationAttachment $attachment, EntityManagerInterface $entityManager): Response
     {
-        $manifestationId = $attachment->getManifestation()  ->getId();
+        $manifestationId = $attachment->getManifestation()->getId();
 
         if ($this->isCsrfTokenValid('delete' . $attachment->getId(), $request->request->get('_token'))) {
             // ファイルの削除
