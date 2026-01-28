@@ -1,0 +1,67 @@
+framework:
+  workflows:
+    manifestation:
+      type: 'state_machine'
+      initial_marking: 'New'
+      marking_store:
+        type: 'method'
+        property: 'status1'
+      supports:
+        - App\Entity\Manifestation
+      places:
+        - 'New'
+        - 'Awaiting Order'
+        - 'Ordered'
+        - 'Received'
+        - 'Available'
+        - 'Reserved'
+        - 'Checked Out'
+        - 'Lost'
+        - 'Pending Discard'
+        - 'Discarded'
+      transitions:
+        create_ordered:
+          from: 'New'
+          to: 'Ordered'
+        create_available:
+          from: 'New'
+          to: 'Available'
+        import_ordered:
+          from: 'New'
+          to: 'Ordered'
+        import_available:
+          from: 'New'
+          to: 'Available'
+        selection:
+          from: 'New'
+          to: 'Awaiting Order'
+        order:
+          from: 'Awaiting Order'
+          to: 'Ordered'
+        receive:
+          from: 'Ordered'
+          to: 'Available'
+        reserve:
+          from: 'Available'
+          to: 'Reserved'
+        reserve_cancel:
+          from: 'Reserved'
+          to: 'Available'
+        check_out:
+          from: ['Available', 'Reserved']
+          to: 'Checked Out'
+        check_in:
+          from: 'Checked Out'
+          to: 'Available'
+        report_loss:
+          from: 'Checked Out'
+          to: 'Lost'
+        inventory_lost:
+          from: 'Available'
+          to: 'Lost'
+        inventory_pending_discard:
+          from: 'Available'
+          to: 'Pending Discard'
+        discard:
+          from: 'Pending Discard'
+          to: 'Discarded'

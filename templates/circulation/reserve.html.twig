@@ -1,0 +1,82 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}予約{% endblock %}
+
+{% block body %}
+<div class="container py-3">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <div>
+            <h1 class="h4 mb-1">予約</h1>
+            <p class="text-muted small mb-0">利用者とManifestation識別子を読み取って登録します。</p>
+        </div>
+        <a class="btn btn-outline-secondary btn-sm" href="{{ path('app_circulation_index') }}">貸出・返却へ</a>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-lg-6">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header bg-white">
+                    <strong>予約登録</strong>
+                </div>
+                <div class="card-body">
+                    <form id="reserve-form">
+                        <div class="mb-3">
+                            <label class="form-label">利用者識別子</label>
+                            <input type="text" class="form-control" name="memberIdentifier" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Manifestation識別子</label>
+                            <input type="text" class="form-control" name="manifestationIdentifier" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">予約期限（任意）</label>
+                            <input type="datetime-local" class="form-control" name="expiryDate">
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">予約登録</button>
+                    </form>
+                </div>
+                <div class="card-footer bg-white">
+                    <div class="small text-muted" id="reserve-result"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const reserveForm = document.getElementById('reserve-form');
+    const reserveResult = document.getElementById('reserve-result');
+
+    function setResult(target, message, isError = false) {
+        target.textContent = message;
+        target.classList.toggle('text-danger', isError);
+        target.classList.toggle('text-muted', !isError);
+    }
+
+    reserveForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const formData = new FormData(reserveForm);
+        const expiryValue = formData.get('expiryDate');
+        const expiryDate = expiryValue ? Math.floor(new Date(expiryValue).getTime() / 1000) : null;
+
+        const payload = {
+            memberIdentifier: formData.get('memberIdentifier'),
+            manifestationIdentifier: formData.get('manifestationIdentifier'),
+            expiryDate: expiryDate,
+        };
+
+        const response = await fetch('{{ path('app_circulation_reserve') }}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        });
+        const data = await response.json();
+        if (!response.ok) {
+            setResult(reserveResult, data.error || '予約に失敗しました。', true);
+            return;
+        }
+        setResult(reserveResult, '予約登録完了（ステータス: ' + data.reservationStatus + '）');
+        reserveForm.reset();
+    });
+</script>
+{% endblock %}

@@ -340,7 +340,9 @@
                         <tr>
                             <th>{{ 'Model.Manifestation.fields.Status1' | trans }}</th>
                             <td>
-                                {{ manifestation.status1 }}
+                                {% set statusKey = 'Workflow.Manifestation.Status.' ~ manifestation.status1 %}
+                                {% set statusLabel = statusKey|trans %}
+                                {{ statusLabel == statusKey ? manifestation.status1 : statusLabel }}
                             </td>
                         </tr>
                         <tr>

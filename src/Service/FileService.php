@@ -29,6 +29,7 @@ class FileService
         private EntityManagerInterface $entityManager,
         private LoggerInterface        $logger,
         private NumberingService $numberingService,
+        private ManifestationStatusResolver $statusResolver,
     ) {
     }
 
@@ -291,8 +292,9 @@ class FileService
                     if (isset($cellvals['location3'])) {
                         $manifestation->setLocation3($cellvals['location3']);
                     }
-                    if (isset($cellvals['status1'])) {
-                        $manifestation->setStatus1($cellvals['status1']);
+                    if (isset($cellvals['status1']) && !$this->isBlank($cellvals['status1'])) {
+                        $normalizedStatus = $this->statusResolver->assertValid($cellvals['status1']);
+                        $manifestation->setStatus1($normalizedStatus);
                     }
                     if (isset($cellvals['status2'])) {
                         $manifestation->setStatus2($cellvals['status2']);

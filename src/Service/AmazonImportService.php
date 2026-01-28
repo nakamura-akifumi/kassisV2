@@ -404,7 +404,7 @@ class AmazonImportService
                 }
                 $manifestation->setPrice($price);
                 $manifestation->setPriceCurrency($priceCurrency);
-                $manifestation->setStatus1('new');
+                $manifestation->setStatus1('New');
                 if ($contributor2 !== null) {
                     $manifestation->setContributor2($contributor2);
                 }

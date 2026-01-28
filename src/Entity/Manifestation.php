@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use App\Validator\ManifestationStatus;
 use App\Repository\ManifestationRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -101,7 +102,8 @@ class Manifestation
     private ?string $extinfo = null;
 
     #[ORM\Column]
-    private string $status1 = 'active';
+    #[ManifestationStatus]
+    private string $status1 = 'Available';
 
     #[ORM\Column(length: 16, nullable: true)]
     private ?string $status2 = null;
@@ -521,7 +523,7 @@ class Manifestation
         
         // status1のデフォルト値を設定
         if (empty($this->status1)) {
-            $this->status1 = 'active';
+            $this->status1 = 'Available';
         }
     }
 

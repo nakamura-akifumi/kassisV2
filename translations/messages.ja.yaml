@@ -49,3 +49,16 @@ Model:
       Extinfo: "拡張情報"
       CreatedAt: "作成日時"
       UpdatedAt: "更新日時"
+Workflow:
+  Manifestation:
+    Status:
+      New: "新規"
+      "Awaiting Order": "発注待ち"
+      Ordered: "発注済"
+      Received: "受入済"
+      Available: "利用可"
+      Reserved: "予約済"
+      "Checked Out": "貸出中"
+      Lost: "紛失"
+      "Pending Discard": "廃棄待ち"
+      Discarded: "廃棄済"
