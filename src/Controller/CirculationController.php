@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Service\CirculationService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -21,6 +22,28 @@ class CirculationController extends AbstractController
     public function reservePage(): Response
     {
         return $this->render('circulation/reserve.html.twig');
+    }
+
+    #[Route('/circulation/checkout', name: 'app_circulation_checkout_page', methods: ['GET'])]
+    public function checkoutPage(ParameterBagInterface $params): Response
+    {
+        $dueDays = $params->has('app.checkout.due_days') ? $params->get('app.checkout.due_days') : null;
+        $dueDays = is_numeric($dueDays) ? (int) $dueDays : null;
+        $dueDate = null;
+        if ($dueDays !== null && $dueDays > 0 && $dueDays !== 9999) {
+            $dueDate = (new \DateTimeImmutable())->modify('+' . $dueDays . ' days')->format('Y-m-d');
+        }
+
+        return $this->render('circulation/checkout.html.twig', [
+            'dueDate' => $dueDate,
+            'dueDays' => $dueDays,
+        ]);
+    }
+
+    #[Route('/circulation/checkin', name: 'app_circulation_checkin_page', methods: ['GET'])]
+    public function checkInPage(): Response
+    {
+        return $this->render('circulation/checkin.html.twig');
     }
 
     #[Route('/circulation/reserve', name: 'app_circulation_reserve', methods: ['POST'])]
@@ -94,6 +117,9 @@ class CirculationController extends AbstractController
         return new JsonResponse([
             'status' => 'success',
             'checkedIn' => $checkout !== null,
+            'manifestationIdentifier' => $manifestationIdentifier,
+            'memberIdentifier' => $checkout?->getMember()?->getIdentifier(),
+            'checkedInAt' => $checkout?->getCheckedInAt()?->format('Y-m-d H:i'),
         ]);
     }
 

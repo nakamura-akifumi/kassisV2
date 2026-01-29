@@ -1,0 +1,115 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}返却{% endblock %}
+
+{% block body %}
+<div class="container py-3">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <div>
+            <h1 class="h4 mb-1">返却</h1>
+            <p class="text-muted small mb-0">返却するManifestation識別子を読み取ります。</p>
+        </div>
+        <a class="btn btn-outline-secondary btn-sm" href="{{ path('app_circulation_index') }}">メニューへ</a>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-lg-6">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header bg-white">
+                    <strong>返却登録</strong>
+                </div>
+                <div class="card-body">
+                    <form id="checkin-form">
+                        <div class="mb-3">
+                            <label class="form-label">Manifestation識別子</label>
+                            <input type="text" class="form-control" name="manifestationIdentifier" required autofocus="autofocus">
+                        </div>
+                        <button type="submit" class="btn btn-warning w-100">返却登録</button>
+                    </form>
+                </div>
+                <div class="card-footer bg-white">
+                    <div class="small text-muted" id="checkin-result"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header bg-white">
+                    <strong>返却リスト</strong>
+                </div>
+                <div class="card-body">
+                    <div class="border rounded p-2 bg-light small" id="checkin-list">
+                        <span class="text-muted">まだ返却がありません。</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const checkinForm = document.getElementById('checkin-form');
+    const checkinResult = document.getElementById('checkin-result');
+    const checkinList = document.getElementById('checkin-list');
+    const checkinItems = [];
+
+    function setResult(target, message, isError = false) {
+        target.textContent = message;
+        target.classList.toggle('text-danger', isError);
+        target.classList.toggle('text-muted', !isError);
+    }
+
+    checkinForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const formData = new FormData(checkinForm);
+        const payload = {
+            manifestationIdentifier: formData.get('manifestationIdentifier'),
+        };
+
+        const response = await fetch('{{ path('app_circulation_checkin') }}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        });
+        const data = await response.json();
+        if (!response.ok) {
+            setResult(checkinResult, data.error || '返却に失敗しました。', true);
+            return;
+        }
+        if (data.checkedIn) {
+            const label = [
+                data.manifestationIdentifier || 'unknown',
+                data.memberIdentifier || 'unknown',
+                data.checkedInAt || '',
+            ].filter(Boolean).join(' / ');
+            checkinItems.unshift(label);
+            if (checkinItems.length > 20) {
+                checkinItems.pop();
+            }
+            renderCheckinList();
+            setResult(checkinResult, '返却登録完了');
+        } else {
+            setResult(checkinResult, '返却対象が見つかりません');
+        }
+        checkinForm.reset();
+    });
+
+    function renderCheckinList() {
+        checkinList.replaceChildren();
+        if (checkinItems.length === 0) {
+            const span = document.createElement('span');
+            span.className = 'text-muted';
+            span.textContent = 'まだ返却がありません。';
+            checkinList.appendChild(span);
+            return;
+        }
+
+        checkinItems.forEach((value) => {
+            const row = document.createElement('div');
+            row.className = 'py-1';
+            row.textContent = value;
+            checkinList.appendChild(row);
+        });
+    }
+</script>
+{% endblock %}

@@ -10,8 +10,8 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\HasLifecycleCallbacks]
 class Checkout
 {
-    public const STATUS_CHECKED_OUT = '貸出中';
-    public const STATUS_RETURNED = '返却済';
+    public const STATUS_CHECKED_OUT = 'checked_out';
+    public const STATUS_RETURNED = 'returned';
 
     #[ORM\Id]
     #[ORM\GeneratedValue]

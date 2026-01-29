@@ -1,0 +1,81 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}利用者詳細{% endblock %}
+
+{% block body %}
+<div class="container py-3">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <div>
+            <h1 class="h4 mb-1">利用者詳細</h1>
+            <p class="text-muted small mb-0">{{ member.fullName }}</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a class="btn btn-outline-secondary btn-sm" href="{{ path('app_member_index') }}">一覧へ</a>
+            <a class="btn btn-outline-primary btn-sm" href="{{ path('app_member_edit', {'id': member.id}) }}">編集</a>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <table class="table table-sm mb-0">
+            <tbody>
+                <tr>
+                    <th>ID</th>
+                    <td>{{ member.id }}</td>
+                </tr>
+                <tr>
+                    <th>{{ 'Model.Member.fields.Identifier' | trans }}</th>
+                    <td>{{ member.identifier }}</td>
+                </tr>
+                <tr>
+                    <th>{{ 'Model.Member.fields.FullName' | trans }}</th>
+                    <td>{{ member.fullName }}</td>
+                </tr>
+                <tr>
+                    <th>{{ 'Model.Member.fields.FullNameYomi' | trans }}</th>
+                    <td>{{ member.fullNameYomi }}</td>
+                </tr>
+                <tr>
+                    <th>{{ 'Model.Member.fields.Group1' | trans }}</th>
+                    <td>{{ member.group1 }}</td>
+                </tr>
+                <tr>
+                    <th>{{ 'Model.Member.fields.Group2' | trans }}</th>
+                    <td>{{ member.group2 }}</td>
+                </tr>
+                <tr>
+                    <th>{{ 'Model.Member.fields.CommunicationAddress1' | trans }}</th>
+                    <td>{{ member.communicationAddress1 }}</td>
+                </tr>
+                <tr>
+                    <th>{{ 'Model.Member.fields.CommunicationAddress2' | trans }}</th>
+                    <td>{{ member.communicationAddress2 }}</td>
+                </tr>
+                <tr>
+                    <th>{{ 'Model.Member.fields.Role' | trans }}</th>
+                    <td>{{ member.role }}</td>
+                </tr>
+                <tr>
+                    <th>{{ 'Model.Member.fields.Status' | trans }}</th>
+                    <td>{{ member.statusLabel }}</td>
+                </tr>
+                <tr>
+                    <th>{{ 'Model.Member.fields.ExpiryDate' | trans }}</th>
+                    <td>{{ member.expiryDate ? member.expiryDate|date('Y-m-d') : '' }}</td>
+                </tr>
+                <tr>
+                    <th>{{ 'Model.Member.fields.Note' | trans }}</th>
+                    <td>{{ member.note }}</td>
+                </tr>
+                <tr>
+                    <th>{{ 'Model.Member.fields.CreatedAt' | trans }}</th>
+                    <td>{{ member.createdAt ? member.createdAt|date('Y-m-d H:i') : '' }}</td>
+                </tr>
+                <tr>
+                    <th>{{ 'Model.Member.fields.UpdatedAt' | trans }}</th>
+                    <td>{{ member.updatedAt ? member.updatedAt|date('Y-m-d H:i') : '' }}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

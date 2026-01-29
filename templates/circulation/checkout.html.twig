@@ -1,0 +1,203 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}貸出{% endblock %}
+
+{% block body %}
+<div class="container py-3">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <div>
+            <h1 class="h4 mb-1">貸出</h1>
+            <p class="text-muted small mb-0">利用者識別子と貸出するManifestation識別子を読み取ります。</p>
+        </div>
+        <a class="btn btn-outline-secondary btn-sm" href="{{ path('app_circulation_index') }}">メニューへ</a>
+    </div>
+    <div class="alert alert-info small py-2" data-due-date="{{ dueDate ?? '' }}">
+        {% if dueDate %}
+            貸出期限日: {{ dueDate }}（{{ dueDays }}日後）
+        {% else %}
+            貸出期限日は未設定です。
+        {% endif %}
+    </div>
+
+    <div class="row g-3">
+        <div class="col-lg-6">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header bg-white">
+                    <strong>貸出登録</strong>
+                </div>
+                <div class="card-body">
+                    <form id="checkout-form">
+                        <div class="mb-3">
+                            <label class="form-label">利用者識別子</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="member-input" name="memberIdentifier" required autofocus="autofocus">
+                                <button type="button" class="btn btn-outline-secondary" id="member-set">確定</button>
+                            </div>
+                            <div class="form-text">読み取り後にEnterで確定できます。</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Manifestation識別子（1冊ずつ）</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="manifestation-input" placeholder="読み取り後に貸出登録" disabled>
+                                <button type="button" class="btn btn-secondary" id="manifestation-add" disabled>貸出</button>
+                            </div>
+                            <div class="form-text">利用者確定後、読み取り→Enterで即登録します。</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">直近の貸出</label>
+                            <div class="border rounded p-2 bg-light small" id="checkout-log">
+                                <span class="text-muted">まだ貸出がありません。</span>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-success w-100">利用者リセット</button>
+                    </form>
+                </div>
+                <div class="card-footer bg-white">
+                    <div class="small text-muted" id="checkout-result"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const checkoutForm = document.getElementById('checkout-form');
+    const checkoutResult = document.getElementById('checkout-result');
+    const memberInput = document.getElementById('member-input');
+    const memberSet = document.getElementById('member-set');
+    const manifestationInput = document.getElementById('manifestation-input');
+    const manifestationAdd = document.getElementById('manifestation-add');
+    const checkoutLog = document.getElementById('checkout-log');
+    const dueDateValue = document.querySelector('[data-due-date]')?.getAttribute('data-due-date') || '';
+    const queuedItems = [];
+
+    function setResult(target, message, isError = false) {
+        target.textContent = message;
+        target.classList.toggle('text-danger', isError);
+        target.classList.toggle('text-muted', !isError);
+    }
+
+    checkoutForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+        queuedItems.splice(0, queuedItems.length);
+        setResult(checkoutResult, '利用者をリセットしました。');
+        resetMember();
+        renderCheckoutLog();
+    });
+
+    function renderCheckoutLog() {
+        checkoutLog.replaceChildren();
+        if (queuedItems.length === 0) {
+            const span = document.createElement('span');
+            span.className = 'text-muted';
+            span.textContent = 'まだ貸出がありません。';
+            checkoutLog.appendChild(span);
+            return;
+        }
+
+        queuedItems.forEach((item) => {
+            const row = document.createElement('div');
+            row.className = 'py-1';
+            const dueLabel = item.dueDate ? item.dueDate : '未設定';
+            row.textContent = item.manifestation + ' / ' + item.member + ' / 期限: ' + dueLabel;
+            checkoutLog.appendChild(row);
+        });
+    }
+
+    async function setMember() {
+        const memberValue = (memberInput.value || '').trim();
+        if (!memberValue) {
+            memberInput.focus();
+            return;
+        }
+
+        const response = await fetch('{{ path('app_member_check') }}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ identifier: memberValue }),
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || !data.exists) {
+            setResult(checkoutResult, '利用者が見つかりません。', true);
+            memberInput.focus();
+            return;
+        }
+
+        setResult(checkoutResult, '利用者確定: ' + (data.fullName || memberValue));
+        manifestationInput.disabled = false;
+        manifestationAdd.disabled = false;
+        manifestationAdd.classList.remove('btn-secondary');
+        manifestationAdd.classList.add('btn-primary');
+        manifestationInput.focus();
+    }
+
+    function resetMember() {
+        memberInput.value = '';
+        manifestationInput.value = '';
+        manifestationInput.disabled = true;
+        manifestationAdd.disabled = true;
+        manifestationAdd.classList.remove('btn-primary');
+        manifestationAdd.classList.add('btn-secondary');
+        memberInput.focus();
+    }
+
+    async function checkoutSingle() {
+        const memberValue = (memberInput.value || '').trim();
+        if (!memberValue) {
+            setResult(checkoutResult, '利用者識別子を入力してください。', true);
+            memberInput.focus();
+            return;
+        }
+        const value = (manifestationInput.value || '').trim();
+        if (!value) {
+            manifestationInput.focus();
+            return;
+        }
+
+        const payload = {
+            memberIdentifier: memberValue,
+            manifestationIdentifiers: [value],
+        };
+
+        const response = await fetch('{{ path('app_circulation_checkout') }}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        });
+        const data = await response.json();
+        if (!response.ok) {
+            setResult(checkoutResult, data.error || '貸出に失敗しました。', true);
+            return;
+        }
+
+        queuedItems.unshift({
+            manifestation: value,
+            member: memberValue,
+            dueDate: dueDateValue,
+        });
+        if (queuedItems.length > 20) {
+            queuedItems.pop();
+        }
+        renderCheckoutLog();
+        setResult(checkoutResult, '貸出登録完了（' + data.checkoutCount + '件）');
+        manifestationInput.value = '';
+        manifestationInput.focus();
+    }
+
+    memberSet.addEventListener('click', setMember);
+    memberInput.addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter') return;
+        event.preventDefault();
+        setMember();
+    });
+
+    manifestationAdd.addEventListener('click', checkoutSingle);
+    manifestationInput.addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter') return;
+        event.preventDefault();
+        checkoutSingle();
+    });
+
+    renderCheckoutLog();
+</script>
+{% endblock %}

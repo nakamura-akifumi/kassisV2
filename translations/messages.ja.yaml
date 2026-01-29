@@ -49,6 +49,23 @@ Model:
       Extinfo: "拡張情報"
       CreatedAt: "作成日時"
       UpdatedAt: "更新日時"
+  Member:
+    name: "利用者"
+    fields:
+      Id: "ID"
+      Identifier: "識別子"
+      FullName: "フルネーム"
+      FullNameYomi: "フルネームヨミ"
+      Group1: "利用者グループ1"
+      Group2: "利用者グループ2"
+      CommunicationAddress1: "コミュニケーションアドレス1"
+      CommunicationAddress2: "コミュニケーションアドレス2"
+      Role: "権限"
+      Status: "状態"
+      Note: "注記"
+      ExpiryDate: "有効期限"
+      CreatedAt: "作成日時"
+      UpdatedAt: "更新日時"
 Workflow:
   Manifestation:
     Status:

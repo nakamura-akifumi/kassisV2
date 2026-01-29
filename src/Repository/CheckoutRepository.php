@@ -21,9 +21,20 @@ class CheckoutRepository extends ServiceEntityRepository
     {
         return $this->createQueryBuilder('c')
             ->andWhere('c.manifestation = :manifestation')
-            ->andWhere('c.status = :status')
+            ->andWhere('c.status IN (:statuses)')
             ->setParameter('manifestation', $manifestation)
-            ->setParameter('status', Checkout::STATUS_CHECKED_OUT)
+            ->setParameter('statuses', [Checkout::STATUS_CHECKED_OUT, '貸出中'])
+            ->orderBy('c.checked_out_at', 'DESC')
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
+    public function findLatestByManifestation(Manifestation $manifestation): ?Checkout
+    {
+        return $this->createQueryBuilder('c')
+            ->andWhere('c.manifestation = :manifestation')
+            ->setParameter('manifestation', $manifestation)
             ->orderBy('c.checked_out_at', 'DESC')
             ->setMaxResults(1)
             ->getQuery()

@@ -6,119 +6,39 @@
 <div class="container py-3">
     <div class="d-flex align-items-center justify-content-between mb-3">
         <div>
-            <h1 class="h4 mb-1">貸出・返却</h1>
-            <p class="text-muted small mb-0">貸出・返却の簡易フォームです。</p>
+            <h1 class="h4 mb-1">予約・貸出・返却</h1>
+            <p class="text-muted small mb-0">各業務の専用画面へ進んでください。</p>
         </div>
-        <a class="btn btn-outline-primary btn-sm" href="{{ path('app_circulation_reserve_page') }}">予約画面へ</a>
     </div>
 
     <div class="row g-3">
-        <div class="col-lg-6">
+        <div class="col-lg-4">
             <div class="card h-100 shadow-sm">
-                <div class="card-header bg-white">
-                    <strong>貸出</strong>
-                </div>
                 <div class="card-body">
-                    <form id="checkout-form">
-                        <div class="mb-3">
-                            <label class="form-label">利用者識別子</label>
-                            <input type="text" class="form-control" name="memberIdentifier" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Manifestation識別子（複数可）</label>
-                            <textarea class="form-control" name="manifestationIdentifiers" rows="5" placeholder="改行またはカンマ区切りで入力"></textarea>
-                        </div>
-                        <button type="submit" class="btn btn-success w-100">貸出登録</button>
-                    </form>
-                </div>
-                <div class="card-footer bg-white">
-                    <div class="small text-muted" id="checkout-result"></div>
+                    <h2 class="h6">予約</h2>
+                    <p class="text-muted small">利用者とManifestationの識別子を読み取って登録します。</p>
+                    <a class="btn btn-outline-primary w-100" href="{{ path('app_circulation_reserve_page') }}">予約画面へ</a>
                 </div>
             </div>
         </div>
-
-        <div class="col-lg-6">
+        <div class="col-lg-4">
             <div class="card h-100 shadow-sm">
-                <div class="card-header bg-white">
-                    <strong>返却</strong>
-                </div>
                 <div class="card-body">
-                    <form id="checkin-form">
-                        <div class="mb-3">
-                            <label class="form-label">Manifestation識別子</label>
-                            <input type="text" class="form-control" name="manifestationIdentifier" required>
-                        </div>
-                        <button type="submit" class="btn btn-warning w-100">返却登録</button>
-                    </form>
+                    <h2 class="h6">貸出</h2>
+                    <p class="text-muted small">複数冊の連続読取にも対応します。</p>
+                    <a class="btn btn-outline-success w-100" href="{{ path('app_circulation_checkout_page') }}">貸出画面へ</a>
                 </div>
-                <div class="card-footer bg-white">
-                    <div class="small text-muted" id="checkin-result"></div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h2 class="h6">返却</h2>
+                    <p class="text-muted small">Manifestation識別子を読み取って返却登録します。</p>
+                    <a class="btn btn-outline-warning w-100" href="{{ path('app_circulation_checkin_page') }}">返却画面へ</a>
                 </div>
             </div>
         </div>
     </div>
 </div>
-
-<script>
-    const checkoutForm = document.getElementById('checkout-form');
-    const checkinForm = document.getElementById('checkin-form');
-
-    const checkoutResult = document.getElementById('checkout-result');
-    const checkinResult = document.getElementById('checkin-result');
-
-    function setResult(target, message, isError = false) {
-        target.textContent = message;
-        target.classList.toggle('text-danger', isError);
-        target.classList.toggle('text-muted', !isError);
-    }
-
-    checkoutForm.addEventListener('submit', async (event) => {
-        event.preventDefault();
-        const formData = new FormData(checkoutForm);
-        const identifiersRaw = formData.get('manifestationIdentifiers') || '';
-        const identifiers = identifiersRaw
-            .split(/[\n,]/)
-            .map((value) => value.trim())
-            .filter((value) => value !== '');
-
-        const payload = {
-            memberIdentifier: formData.get('memberIdentifier'),
-            manifestationIdentifiers: identifiers,
-        };
-
-        const response = await fetch('{{ path('app_circulation_checkout') }}', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload),
-        });
-        const data = await response.json();
-        if (!response.ok) {
-            setResult(checkoutResult, data.error || '貸出に失敗しました。', true);
-            return;
-        }
-        setResult(checkoutResult, '貸出登録完了（' + data.checkoutCount + '件）');
-        checkoutForm.reset();
-    });
-
-    checkinForm.addEventListener('submit', async (event) => {
-        event.preventDefault();
-        const formData = new FormData(checkinForm);
-        const payload = {
-            manifestationIdentifier: formData.get('manifestationIdentifier'),
-        };
-
-        const response = await fetch('{{ path('app_circulation_checkin') }}', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload),
-        });
-        const data = await response.json();
-        if (!response.ok) {
-            setResult(checkinResult, data.error || '返却に失敗しました。', true);
-            return;
-        }
-        setResult(checkinResult, data.checkedIn ? '返却登録完了' : '返却対象が見つかりません');
-        checkinForm.reset();
-    });
-</script>
 {% endblock %}

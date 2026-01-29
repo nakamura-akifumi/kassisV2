@@ -1,0 +1,66 @@
+{{ form_start(form, {'attr': {'class': 'needs-validation', 'novalidate': 'novalidate'}}) }}
+
+<div class="card shadow-sm mb-3">
+    <div class="card-body">
+        <div class="row g-2">
+            <div class="col-md-6">
+                {{ form_label(form.identifier, 'Model.Member.fields.Identifier' | trans, {'label_attr': {'class': 'form-label small mb-0 required fw-bold text-danger'}}) }}
+                {{ form_widget(form.identifier, {'attr': {'class': 'form-control form-control-sm border-danger', 'autofocus': 'autofocus'}}) }}
+                {% if not form.identifier.vars.valid %}
+                    <div class="invalid-feedback d-block">
+                        {{ form_errors(form.identifier) }}
+                    </div>
+                {% endif %}
+            </div>
+            <div class="col-md-6">
+                {{ form_label(form.full_name, 'Model.Member.fields.FullName' | trans, {'label_attr': {'class': 'form-label small mb-0 required fw-bold text-danger'}}) }}
+                {{ form_widget(form.full_name, {'attr': {'class': 'form-control form-control-sm border-danger'}}) }}
+                {% if not form.full_name.vars.valid %}
+                    <div class="invalid-feedback d-block">
+                        {{ form_errors(form.full_name) }}
+                    </div>
+                {% endif %}
+            </div>
+            <div class="col-md-6">
+                {{ form_label(form.full_name_yomi, 'Model.Member.fields.FullNameYomi' | trans, {'label_attr': {'class': 'form-label small mb-0'}}) }}
+                {{ form_widget(form.full_name_yomi, {'attr': {'class': 'form-control form-control-sm'}}) }}
+            </div>
+            <div class="col-md-6">
+                {{ form_label(form.role, 'Model.Member.fields.Role' | trans, {'label_attr': {'class': 'form-label small mb-0'}}) }}
+                {{ form_widget(form.role, {'attr': {'class': 'form-control form-control-sm'}}) }}
+            </div>
+            <div class="col-md-6">
+                {{ form_label(form.status, 'Model.Member.fields.Status' | trans, {'label_attr': {'class': 'form-label small mb-0'}}) }}
+                {{ form_widget(form.status, {'attr': {'class': 'form-control form-control-sm'}}) }}
+            </div>
+            <div class="col-md-6">
+                {{ form_label(form.group1, 'Model.Member.fields.Group1' | trans, {'label_attr': {'class': 'form-label small mb-0'}}) }}
+                {{ form_widget(form.group1, {'attr': {'class': 'form-control form-control-sm'}}) }}
+            </div>
+            <div class="col-md-6">
+                {{ form_label(form.group2, 'Model.Member.fields.Group2' | trans, {'label_attr': {'class': 'form-label small mb-0'}}) }}
+                {{ form_widget(form.group2, {'attr': {'class': 'form-control form-control-sm'}}) }}
+            </div>
+            <div class="col-md-6">
+                {{ form_label(form.communication_address1, 'Model.Member.fields.CommunicationAddress1' | trans, {'label_attr': {'class': 'form-label small mb-0'}}) }}
+                {{ form_widget(form.communication_address1, {'attr': {'class': 'form-control form-control-sm'}}) }}
+            </div>
+            <div class="col-md-6">
+                {{ form_label(form.communication_address2, 'Model.Member.fields.CommunicationAddress2' | trans, {'label_attr': {'class': 'form-label small mb-0'}}) }}
+                {{ form_widget(form.communication_address2, {'attr': {'class': 'form-control form-control-sm'}}) }}
+            </div>
+            <div class="col-md-6">
+                {{ form_label(form.expiry_date, 'Model.Member.fields.ExpiryDate' | trans, {'label_attr': {'class': 'form-label small mb-0'}}) }}
+                {{ form_widget(form.expiry_date, {'attr': {'class': 'form-control form-control-sm'}}) }}
+            </div>
+            <div class="col-12">
+                {{ form_label(form.note, 'Model.Member.fields.Note' | trans, {'label_attr': {'class': 'form-label small mb-0'}}) }}
+                {{ form_widget(form.note, {'attr': {'class': 'form-control form-control-sm', 'rows': 3}}) }}
+            </div>
+        </div>
+    </div>
+</div>
+
+<button class="btn btn-primary btn-sm">{{ button_label|default('保存') }}</button>
+
+{{ form_end(form) }}

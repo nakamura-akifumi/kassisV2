@@ -1,0 +1,17 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}利用者登録{% endblock %}
+
+{% block body %}
+<div class="container py-3">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <div>
+            <h1 class="h4 mb-1">利用者登録</h1>
+            <p class="text-muted small mb-0">新しい利用者を登録します。</p>
+        </div>
+        <a class="btn btn-outline-secondary btn-sm" href="{{ path('app_member_index') }}">一覧へ</a>
+    </div>
+
+    {% include 'member/_form.html.twig' with {'form': form, 'button_label': '登録'} %}
+</div>
+{% endblock %}

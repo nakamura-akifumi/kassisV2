@@ -10,6 +10,7 @@ use App\Repository\ManifestationRepository;
 use App\Repository\MemberRepository;
 use App\Repository\ReservationRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use Symfony\Component\Workflow\WorkflowInterface;
 use Symfony\Component\Workflow\Registry;
 
@@ -22,6 +23,7 @@ class CirculationService
         private ReservationRepository $reservationRepository,
         private CheckoutRepository $checkoutRepository,
         private Registry $workflowRegistry,
+        private ParameterBagInterface $params,
     ) {
     }
 
@@ -80,6 +82,7 @@ class CirculationService
             $checkout->setManifestation($manifestation);
             $checkout->setCheckedOutAt($now);
             $checkout->setStatus(Checkout::STATUS_CHECKED_OUT);
+            $checkout->setDueDate($this->calculateDueDate($now));
 
             $reservation = $this->reservationRepository->findWaitingByManifestationAndMember($manifestation, $member);
             if ($reservation !== null) {
@@ -108,9 +111,12 @@ class CirculationService
         }
 
         $checkout = $this->checkoutRepository->findActiveByManifestation($manifestation);
+        if ($checkout === null) {
+            $checkout = $this->checkoutRepository->findLatestByManifestation($manifestation);
+        }
         $now = new \DateTime();
 
-        if ($checkout !== null) {
+        if ($checkout !== null && $checkout->getCheckedInAt() === null) {
             $checkout->setCheckedInAt($now);
             $checkout->setStatus(Checkout::STATUS_RETURNED);
         }
@@ -136,5 +142,20 @@ class CirculationService
     private function getManifestationWorkflow(Manifestation $manifestation): WorkflowInterface
     {
         return $this->workflowRegistry->get($manifestation, 'manifestation');
+    }
+
+    private function calculateDueDate(\DateTimeInterface $base): ?\DateTimeInterface
+    {
+        if (!$this->params->has('app.checkout.due_days')) {
+            return null;
+        }
+        $days = $this->params->get('app.checkout.due_days');
+        $days = is_numeric($days) ? (int) $days : null;
+        if ($days === null || $days <= 0 || $days === 9999) {
+            return null;
+        }
+
+        $date = ($base instanceof \DateTimeImmutable) ? $base : \DateTimeImmutable::createFromInterface($base);
+        return $date->modify('+' . $days . ' days');
     }
 }

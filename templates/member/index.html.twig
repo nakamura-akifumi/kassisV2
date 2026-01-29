@@ -1,0 +1,94 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}利用者一覧{% endblock %}
+
+{% block body %}
+<div class="container py-3">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <div>
+            <h1 class="h4 mb-1">利用者一覧</h1>
+            <p class="text-muted small mb-0">登録済みの利用者を表示します。</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a class="btn btn-outline-secondary btn-sm" href="{{ path('app_member_file_import') }}">インポート</a>
+            <a class="btn btn-outline-secondary btn-sm" href="{{ path('app_member_file_export') }}">エクスポート</a>
+            <a class="btn btn-primary btn-sm" href="{{ path('app_member_new') }}">新規登録</a>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body p-2">
+            <div id="member-grid"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const gridData = {{ gridData|json_encode|raw }};
+    const parentElement = document.getElementById('member-grid');
+
+    if (parentElement) {
+        parentElement.style.width = '100%';
+        parentElement.style.height = '600px';
+        parentElement.style.border = '1px solid #ddd';
+
+        const records = (gridData || []).map(r => Object.assign({ __show: '詳', __edit: '編' }, r));
+
+        const header = [
+            { field: '__show', caption: '', width: 44, style: { textAlign: 'center', bgColor: '#e9f2ff', color: '#0d6efd' } },
+            { field: '__edit', caption: '', width: 44, style: { textAlign: 'center', bgColor: '#e9f2ff', color: '#0d6efd' } },
+            { field: 'id', caption: 'ID', width: 60 },
+            { field: 'identifier', caption: '識別子', width: 160 },
+            { field: 'fullName', caption: 'フルネーム', width: 200 },
+            { field: 'group1', caption: '利用者グループ1', width: 140 },
+            { field: 'role', caption: '権限', width: 120 },
+            { field: 'status', caption: '状態', width: 100 },
+            { field: 'expiryDate', caption: '有効期限', width: 110 },
+            { field: 'updatedAt', caption: '更新日時', width: 140 },
+            { field: 'note', caption: '注記', width: 200 },
+        ];
+
+        const grid = new cheetahGrid.ListGrid({
+            parentElement: parentElement,
+            header: header,
+            records: records,
+            frozenColCount: 2,
+            defaultRowHeight: 28,
+            headerRowHeight: 28,
+            theme: {
+                defaultStyle: {
+                    font: '12px "Noto Sans JP", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif',
+                },
+            },
+        });
+
+        grid.listen('click_cell', function(args) {
+            if (!args) return;
+            if (args.col !== 0 && args.col !== 1) return;
+
+            let rec = args.record || null;
+            if (!rec && grid.records && typeof args.row === 'number') {
+                const idx = Math.max(0, args.row - 1);
+                rec = grid.records[idx] || null;
+            }
+
+            const id = rec && rec.id ? rec.id : null;
+            if (!id) return;
+
+            if (args.col === 0) {
+                window.location.href = '{{ path('app_member_show', {'id': 0}) }}'.replace('/0', '/' + id);
+            } else {
+                window.location.href = '{{ path('app_member_edit', {'id': 0}) }}'.replace('/0/edit', '/' + id + '/edit');
+            }
+        });
+
+        grid.listen('mousemove_cell', function(args) {
+            if (!args) return;
+            parentElement.style.cursor = (args.col === 0 || args.col === 1) ? 'pointer' : '';
+        });
+        grid.listen('mouseleave_grid', function() {
+            parentElement.style.cursor = '';
+        });
+    }
+</script>
+{% endblock %}

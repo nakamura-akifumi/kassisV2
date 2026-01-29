@@ -28,6 +28,8 @@ final class Version20260115090000 extends AbstractMigration
                 communication_address2 VARCHAR(256) DEFAULT NULL,
                 role VARCHAR(32) DEFAULT NULL,
                 expiry_date DATE DEFAULT NULL,
+                STATUS VARCHAR(32) NOT NULL,
+                note LONGTEXT DEFAULT NULL,
                 created_at DATETIME NOT NULL,
                 updated_at DATETIME NOT NULL,
                 UNIQUE INDEX UNIQ_70E4FA78C05FB297 (identifier),

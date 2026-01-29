@@ -6,21 +6,35 @@ use App\Repository\MemberRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: MemberRepository::class)]
 #[ORM\HasLifecycleCallbacks]
 #[UniqueEntity(fields: ['identifier'], message: 'この識別子は既に使用されています')]
 class Member
 {
+    public const STATUS_ACTIVE = 'active';
+    public const STATUS_INACTIVE = 'inactive';
+    public const STATUS_EXPIRED = 'expired';
+
+    public const STATUS_LABELS = [
+        self::STATUS_ACTIVE => '有効',
+        self::STATUS_INACTIVE => '無効',
+        self::STATUS_EXPIRED => '期限切れ',
+    ];
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
     private ?int $id = null;
 
     #[ORM\Column(length: 255, unique: true)]
+    #[Assert\NotBlank(message: '識別子は必須です。')]
+    #[Assert\Regex(pattern: '/^[A-Za-z0-9]+$/', message: '識別子は英数字のみで入力してください。')]
     private ?string $identifier = null;
 
     #[ORM\Column(length: 255)]
+    #[Assert\NotBlank(message: 'フルネームは必須です。')]
     private ?string $full_name = null;
 
     #[ORM\Column(length: 255, nullable: true)]
@@ -40,6 +54,12 @@ class Member
 
     #[ORM\Column(length: 32, nullable: true)]
     private ?string $role = null;
+
+    #[ORM\Column(length: 32, nullable: true)]
+    private ?string $status = null;
+
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    private ?string $note = null;
 
     #[ORM\Column(type: Types::DATE_MUTABLE, nullable: true)]
     private ?\DateTimeInterface $expiry_date = null;
@@ -140,6 +160,65 @@ class Member
     public function setRole(?string $role): static
     {
         $this->role = $role;
+        return $this;
+    }
+
+    public function getStatus(): ?string
+    {
+        return $this->status;
+    }
+
+    public function setStatus(?string $status): static
+    {
+        $this->status = $status;
+        return $this;
+    }
+
+    public function getStatusLabel(): ?string
+    {
+        if ($this->status === null) {
+            return null;
+        }
+
+        return self::STATUS_LABELS[$this->status] ?? $this->status;
+    }
+
+    public static function normalizeStatus(?string $status): ?string
+    {
+        if ($status === null) {
+            return null;
+        }
+
+        $trimmed = trim($status);
+        if ($trimmed === '') {
+            return null;
+        }
+
+        if (isset(self::STATUS_LABELS[$trimmed])) {
+            return $trimmed;
+        }
+
+        $lower = strtolower($trimmed);
+        foreach (self::STATUS_LABELS as $key => $label) {
+            if ($label === $trimmed) {
+                return $key;
+            }
+            if (strtolower($key) === $lower) {
+                return $key;
+            }
+        }
+
+        return null;
+    }
+
+    public function getNote(): ?string
+    {
+        return $this->note;
+    }
+
+    public function setNote(?string $note): static
+    {
+        $this->note = $note;
         return $this;
     }
 
