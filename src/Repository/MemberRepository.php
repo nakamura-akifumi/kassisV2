@@ -15,4 +15,32 @@ class MemberRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, Member::class);
     }
+
+    /**
+     * @return Member[]
+     */
+    public function findBySearchTerm(?string $term): array
+    {
+        $term = trim((string) $term);
+        if ($term === '') {
+            return $this->findBy([], ['id' => 'DESC']);
+        }
+
+        $qb = $this->createQueryBuilder('m');
+        $likeTerm = '%' . $term . '%';
+
+        return $qb
+            ->andWhere(
+                $qb->expr()->orX(
+                    $qb->expr()->like('m.full_name', ':term'),
+                    $qb->expr()->like('m.full_name_yomi', ':term'),
+                    $qb->expr()->like('m.communication_address1', ':term'),
+                    $qb->expr()->like('m.communication_address2', ':term'),
+                )
+            )
+            ->setParameter('term', $likeTerm)
+            ->orderBy('m.id', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
 }

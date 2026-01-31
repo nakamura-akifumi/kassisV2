@@ -18,6 +18,15 @@
 
     <div class="card shadow-sm">
         <div class="card-body p-2">
+            <form class="row g-2 align-items-end mb-2" method="get" action="{{ path('app_member_index') }}">
+                <div class="col-sm-8 col-md-6">
+                    <label class="form-label small mb-1" for="member-search">検索</label>
+                    <input type="text" class="form-control" id="member-search" name="q" value="{{ searchTerm|default('') }}" placeholder="フルネーム / フルネームヨミ / コミュニケーションアドレス1 / 2">
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-outline-primary">検索</button>
+                </div>
+            </form>
             <div id="member-grid"></div>
         </div>
     </div>
@@ -37,7 +46,6 @@
         const header = [
             { field: '__show', caption: '', width: 44, style: { textAlign: 'center', bgColor: '#e9f2ff', color: '#0d6efd' } },
             { field: '__edit', caption: '', width: 44, style: { textAlign: 'center', bgColor: '#e9f2ff', color: '#0d6efd' } },
-            { field: 'id', caption: 'ID', width: 60 },
             { field: 'identifier', caption: '識別子', width: 160 },
             { field: 'fullName', caption: 'フルネーム', width: 200 },
             { field: 'group1', caption: '利用者グループ1', width: 140 },

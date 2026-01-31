@@ -7,7 +7,7 @@
     <div class="d-flex align-items-center justify-content-between mb-3">
         <div>
             <h1 class="h4 mb-1">返却</h1>
-            <p class="text-muted small mb-0">返却するManifestation識別子を読み取ります。</p>
+            <p class="text-muted small mb-0">返却する{{ 'Model.Manifestation.display_identifier'|trans }}を読み取ります。</p>
         </div>
         <a class="btn btn-outline-secondary btn-sm" href="{{ path('app_circulation_index') }}">メニューへ</a>
     </div>
@@ -21,7 +21,7 @@
                 <div class="card-body">
                     <form id="checkin-form">
                         <div class="mb-3">
-                            <label class="form-label">Manifestation識別子</label>
+                            <label class="form-label">{{ 'Model.Manifestation.display_identifier'|trans }}</label>
                             <input type="text" class="form-control" name="manifestationIdentifier" required autofocus="autofocus">
                         </div>
                         <button type="submit" class="btn btn-warning w-100">返却登録</button>

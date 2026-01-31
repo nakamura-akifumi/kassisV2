@@ -55,13 +55,13 @@ class NdlImportServiceTest extends KernelTestCase
         $ndlSearchService = new NdlSearchService($httpClient, $logger);
         $service = new NdlImportService($ndlSearchService, $this->entityManager);
 
-        $isbn = '9784003230817';
+        $isbn = '4003230817';
         $manifestation = $service->importByIsbn($isbn);
 
         self::assertNotNull($manifestation);
         self::assertSame("白鯨. 上", $manifestation->getTitle());
         self::assertSame("ハクゲイ ジョウ", $manifestation->getTitleTranscription());
-        self::assertSame("4-00-323081-7", $manifestation->getIdentifier());
+        self::assertSame("4003230817", $manifestation->getIdentifier());
         self::assertSame("9784003230817", $manifestation->getExternalIdentifier1());
         self::assertSame("https://ndlsearch.ndl.go.jp/books/R100000002-I000007478705", $manifestation->getRecordSource());
         self::assertSame("図書", $manifestation->getType1());
@@ -76,7 +76,7 @@ class NdlImportServiceTest extends KernelTestCase
         self::assertNotNull($manifestation);
         self::assertSame("人類が知っていることすべての短い歴史", $manifestation->getTitle());
         self::assertSame("ジンルイ ガ シッテイル コト スベテ ノ ミジカイ レキシ", $manifestation->getTitleTranscription());
-        self::assertSame("4-14-081101-3", $manifestation->getIdentifier());
+        self::assertSame("9784140811016", $manifestation->getIdentifier());
         self::assertSame("9784140811016", $manifestation->getExternalIdentifier1());
         self::assertSame("https://ndlsearch.ndl.go.jp/books/R100000002-I000008142306", $manifestation->getRecordSource());
         self::assertSame("図書", $manifestation->getType1());
@@ -92,7 +92,7 @@ class NdlImportServiceTest extends KernelTestCase
         self::assertNotNull($manifestation);
         self::assertSame("うみまでいけるかな?", $manifestation->getTitle());
         self::assertSame("ウミ マデ イケル カナ", $manifestation->getTitleTranscription());
-        self::assertSame("978-4-8054-5542-5", $manifestation->getIdentifier());
+        self::assertSame("9784805455425", $manifestation->getIdentifier());
         self::assertSame("9784805455425", $manifestation->getExternalIdentifier1());
         self::assertSame("https://ndlsearch.ndl.go.jp/books/R100000002-I032849113", $manifestation->getRecordSource());
         self::assertSame("図書", $manifestation->getType1());

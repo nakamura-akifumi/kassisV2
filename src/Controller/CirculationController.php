@@ -9,13 +9,21 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 class CirculationController extends AbstractController
 {
     #[Route('/circulation', name: 'app_circulation_index', methods: ['GET'])]
-    public function index(): Response
+    public function index(Request $request, \App\Repository\ReservationRepository $reservationRepository, \App\Repository\CheckoutRepository $checkoutRepository): Response
     {
-        return $this->render('circulation/index.html.twig');
+        $type = $this->resolveStatusType($request, 'checkout');
+        [$reservations, $checkouts] = $this->getStatusData($type, $reservationRepository, $checkoutRepository);
+
+        return $this->render('circulation/index.html.twig', [
+            'type' => $type,
+            'reservations' => $reservations,
+            'checkouts' => $checkouts,
+        ]);
     }
 
     #[Route('/circulation/reserve', name: 'app_circulation_reserve_page', methods: ['GET'])]
@@ -25,7 +33,7 @@ class CirculationController extends AbstractController
     }
 
     #[Route('/circulation/checkout', name: 'app_circulation_checkout_page', methods: ['GET'])]
-    public function checkoutPage(ParameterBagInterface $params): Response
+    public function checkoutPage(Request $request, ParameterBagInterface $params): Response
     {
         $dueDays = $params->has('app.checkout.due_days') ? $params->get('app.checkout.due_days') : null;
         $dueDays = is_numeric($dueDays) ? (int) $dueDays : null;
@@ -37,6 +45,7 @@ class CirculationController extends AbstractController
         return $this->render('circulation/checkout.html.twig', [
             'dueDate' => $dueDate,
             'dueDays' => $dueDays,
+            'memberIdentifier' => $request->query->get('memberIdentifier'),
         ]);
     }
 
@@ -45,6 +54,7 @@ class CirculationController extends AbstractController
     {
         return $this->render('circulation/checkin.html.twig');
     }
+
 
     #[Route('/circulation/reserve', name: 'app_circulation_reserve', methods: ['POST'])]
     public function reserve(Request $request, CirculationService $service): JsonResponse
@@ -99,7 +109,7 @@ class CirculationController extends AbstractController
     }
 
     #[Route('/circulation/checkin', name: 'app_circulation_checkin', methods: ['POST'])]
-    public function checkIn(Request $request, CirculationService $service): JsonResponse
+    public function checkIn(Request $request, CirculationService $service, TranslatorInterface $translator): JsonResponse
     {
         $data = $this->getRequestData($request);
         $manifestationIdentifier = $data['manifestationIdentifier'] ?? null;
@@ -111,7 +121,11 @@ class CirculationController extends AbstractController
         try {
             $checkout = $service->checkIn($manifestationIdentifier);
         } catch (\InvalidArgumentException $e) {
-            return new JsonResponse(['error' => $e->getMessage()], 400);
+            $message = $e->getMessage();
+            if ($message === 'Manifestation not found.') {
+                $message = $translator->trans('Model.Manifestation.not_found');
+            }
+            return new JsonResponse(['error' => $message], 400);
         }
 
         return new JsonResponse([
@@ -121,6 +135,18 @@ class CirculationController extends AbstractController
             'memberIdentifier' => $checkout?->getMember()?->getIdentifier(),
             'checkedInAt' => $checkout?->getCheckedInAt()?->format('Y-m-d H:i'),
         ]);
+    }
+
+    #[Route('/circulation/export', name: 'app_circulation_export', methods: ['GET'])]
+    public function exportStatus(Request $request, \App\Repository\ReservationRepository $reservationRepository, \App\Repository\CheckoutRepository $checkoutRepository, \App\Service\CirculationExportService $exportService): Response
+    {
+        $type = $this->resolveStatusType($request);
+        [$reservations, $checkouts] = $this->getStatusData($type, $reservationRepository, $checkoutRepository);
+
+        $tempFile = $exportService->generateStatusExportFile($type, $reservations, $checkouts);
+        $fileName = sprintf('circulation_%s_%s.xlsx', $type, date('Y-m-d_H-i-s'));
+
+        return $this->file($tempFile, $fileName);
     }
 
     private function getRequestData(Request $request): array
@@ -138,5 +164,35 @@ class CirculationController extends AbstractController
         }
 
         return $data;
+    }
+
+    private function resolveStatusType(Request $request, string $default = 'reserve'): string
+    {
+        $type = (string) $request->query->get('type', $default);
+        $allowed = ['reserve', 'checkout', 'return'];
+        if (!in_array($type, $allowed, true)) {
+            $type = $default;
+        }
+
+        return $type;
+    }
+
+    /**
+     * @return array{0: array, 1: array}
+     */
+    private function getStatusData(string $type, \App\Repository\ReservationRepository $reservationRepository, \App\Repository\CheckoutRepository $checkoutRepository): array
+    {
+        $reservations = [];
+        $checkouts = [];
+
+        if ($type === 'reserve') {
+            $reservations = $reservationRepository->findRecent(50);
+        } elseif ($type === 'checkout') {
+            $checkouts = $checkoutRepository->findRecentActive(50);
+        } else {
+            $checkouts = $checkoutRepository->findRecentReturned(50);
+        }
+
+        return [$reservations, $checkouts];
     }
 }

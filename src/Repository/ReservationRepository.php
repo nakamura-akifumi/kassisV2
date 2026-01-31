@@ -45,4 +45,28 @@ class ReservationRepository extends ServiceEntityRepository
             ->getQuery()
             ->getOneOrNullResult();
     }
+
+    /**
+     * @return Reservation[]
+     */
+    public function findRecent(int $limit = 50): array
+    {
+        return $this->createQueryBuilder('r')
+            ->orderBy('r.reserved_at', 'DESC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function countActiveByMember(Member $member): int
+    {
+        return (int) $this->createQueryBuilder('r')
+            ->select('COUNT(r.id)')
+            ->andWhere('r.member = :member')
+            ->andWhere('r.status IN (:statuses)')
+            ->setParameter('member', $member)
+            ->setParameter('statuses', [Reservation::STATUS_WAITING, Reservation::STATUS_AVAILABLE])
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
 }

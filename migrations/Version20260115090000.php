@@ -19,7 +19,7 @@ final class Version20260115090000 extends AbstractMigration
         $this->addSql(<<<'SQL'
             CREATE TABLE member (
                 id INT AUTO_INCREMENT NOT NULL,
-                identifier VARCHAR(255) NOT NULL,
+                identifier VARCHAR(32) NOT NULL,
                 full_name VARCHAR(255) NOT NULL,
                 full_name_yomi VARCHAR(255) DEFAULT NULL,
                 `group1` VARCHAR(32) DEFAULT NULL,

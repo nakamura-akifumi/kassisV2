@@ -17,9 +17,10 @@ use Symfony\Component\Routing\Annotation\Route;
 class MemberController extends AbstractController
 {
     #[Route('/', name: 'app_member_index', methods: ['GET'])]
-    public function index(MemberRepository $memberRepository): Response
+    public function index(Request $request, MemberRepository $memberRepository): Response
     {
-        $members = $memberRepository->findBy([], ['id' => 'DESC']);
+        $searchTerm = $request->query->get('q');
+        $members = $memberRepository->findBySearchTerm($searchTerm);
         $gridData = array_map(static function (Member $member): array {
             return [
                 'id' => $member->getId(),
@@ -37,6 +38,7 @@ class MemberController extends AbstractController
         return $this->render('member/index.html.twig', [
             'members' => $members,
             'gridData' => $gridData,
+            'searchTerm' => $searchTerm,
         ]);
     }
 
@@ -68,10 +70,27 @@ class MemberController extends AbstractController
     }
 
     #[Route('/{id}', name: 'app_member_show', methods: ['GET'], requirements: ['id' => '\d+'])]
-    public function show(Member $member): Response
+    public function show(Member $member, \App\Repository\ReservationRepository $reservationRepository, \App\Repository\CheckoutRepository $checkoutRepository): Response
     {
+        $reservationCount = $reservationRepository->countActiveByMember($member);
+        $checkoutCount = $checkoutRepository->countActiveByMember($member);
+        $rawStatus = trim((string) $member->getStatus());
+        $statusLabel = (string) $member->getStatusLabel();
+        $activeLabel = \App\Entity\Member::STATUS_LABELS[\App\Entity\Member::STATUS_ACTIVE];
+        $isActive = false;
+        if ($rawStatus !== '') {
+            $isActive = strcasecmp($rawStatus, \App\Entity\Member::STATUS_ACTIVE) === 0
+                || strcasecmp($rawStatus, $activeLabel) === 0;
+        }
+        if (!$isActive && $statusLabel !== '') {
+            $isActive = strcasecmp($statusLabel, $activeLabel) === 0;
+        }
+
         return $this->render('member/show.html.twig', [
             'member' => $member,
+            'reservationCount' => $reservationCount,
+            'checkoutCount' => $checkoutCount,
+            'isActive' => $isActive,
         ]);
     }
 
@@ -105,7 +124,7 @@ class MemberController extends AbstractController
     }
 
     #[Route('/check', name: 'app_member_check', methods: ['POST'])]
-    public function check(Request $request, MemberRepository $memberRepository): JsonResponse
+    public function check(Request $request, MemberRepository $memberRepository, \App\Repository\ReservationRepository $reservationRepository, \App\Repository\CheckoutRepository $checkoutRepository): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
         $identifier = $data['identifier'] ?? null;
@@ -116,9 +135,32 @@ class MemberController extends AbstractController
 
         $member = $memberRepository->findOneBy(['identifier' => $identifier]);
 
+        $reservationCount = 0;
+        $checkoutCount = 0;
+        $isActive = false;
+        if ($member !== null) {
+            $reservationCount = $reservationRepository->countActiveByMember($member);
+            $checkoutCount = $checkoutRepository->countActiveByMember($member);
+
+            $rawStatus = trim((string) $member->getStatus());
+            $statusLabel = (string) $member->getStatusLabel();
+            $activeLabel = \App\Entity\Member::STATUS_LABELS[\App\Entity\Member::STATUS_ACTIVE];
+            if ($rawStatus !== '') {
+                $isActive = strcasecmp($rawStatus, \App\Entity\Member::STATUS_ACTIVE) === 0
+                    || strcasecmp($rawStatus, $activeLabel) === 0;
+            }
+            if (!$isActive && $statusLabel !== '') {
+                $isActive = strcasecmp($statusLabel, $activeLabel) === 0;
+            }
+        }
+
         return new JsonResponse([
             'exists' => $member !== null,
             'fullName' => $member?->getFullName(),
+            'checkoutCount' => $checkoutCount,
+            'reservationCount' => $reservationCount,
+            'note' => $member?->getNote(),
+            'isActive' => $isActive,
         ]);
     }
 }

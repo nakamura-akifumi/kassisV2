@@ -11,71 +11,101 @@
         </div>
         <div class="d-flex gap-2">
             <a class="btn btn-outline-secondary btn-sm" href="{{ path('app_member_index') }}">一覧へ</a>
-            <a class="btn btn-outline-primary btn-sm" href="{{ path('app_member_edit', {'id': member.id}) }}">編集</a>
         </div>
     </div>
 
-    <div class="card shadow-sm">
-        <table class="table table-sm mb-0">
-            <tbody>
-                <tr>
-                    <th>ID</th>
-                    <td>{{ member.id }}</td>
-                </tr>
-                <tr>
-                    <th>{{ 'Model.Member.fields.Identifier' | trans }}</th>
-                    <td>{{ member.identifier }}</td>
-                </tr>
-                <tr>
-                    <th>{{ 'Model.Member.fields.FullName' | trans }}</th>
-                    <td>{{ member.fullName }}</td>
-                </tr>
-                <tr>
-                    <th>{{ 'Model.Member.fields.FullNameYomi' | trans }}</th>
-                    <td>{{ member.fullNameYomi }}</td>
-                </tr>
-                <tr>
-                    <th>{{ 'Model.Member.fields.Group1' | trans }}</th>
-                    <td>{{ member.group1 }}</td>
-                </tr>
-                <tr>
-                    <th>{{ 'Model.Member.fields.Group2' | trans }}</th>
-                    <td>{{ member.group2 }}</td>
-                </tr>
-                <tr>
-                    <th>{{ 'Model.Member.fields.CommunicationAddress1' | trans }}</th>
-                    <td>{{ member.communicationAddress1 }}</td>
-                </tr>
-                <tr>
-                    <th>{{ 'Model.Member.fields.CommunicationAddress2' | trans }}</th>
-                    <td>{{ member.communicationAddress2 }}</td>
-                </tr>
-                <tr>
-                    <th>{{ 'Model.Member.fields.Role' | trans }}</th>
-                    <td>{{ member.role }}</td>
-                </tr>
-                <tr>
-                    <th>{{ 'Model.Member.fields.Status' | trans }}</th>
-                    <td>{{ member.statusLabel }}</td>
-                </tr>
-                <tr>
-                    <th>{{ 'Model.Member.fields.ExpiryDate' | trans }}</th>
-                    <td>{{ member.expiryDate ? member.expiryDate|date('Y-m-d') : '' }}</td>
-                </tr>
-                <tr>
-                    <th>{{ 'Model.Member.fields.Note' | trans }}</th>
-                    <td>{{ member.note }}</td>
-                </tr>
-                <tr>
-                    <th>{{ 'Model.Member.fields.CreatedAt' | trans }}</th>
-                    <td>{{ member.createdAt ? member.createdAt|date('Y-m-d H:i') : '' }}</td>
-                </tr>
-                <tr>
-                    <th>{{ 'Model.Member.fields.UpdatedAt' | trans }}</th>
-                    <td>{{ member.updatedAt ? member.updatedAt|date('Y-m-d H:i') : '' }}</td>
-                </tr>
-            </tbody>
-        </table>
+    <div class="row g-3">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <table class="table table-sm mb-0">
+                    <tbody>
+                        <tr>
+                            <th>ID</th>
+                            <td>{{ member.id }}</td>
+                        </tr>
+                        <tr>
+                            <th>{{ 'Model.Member.fields.Identifier' | trans }}</th>
+                            <td>{{ member.identifier }}</td>
+                        </tr>
+                        <tr>
+                            <th>{{ 'Model.Member.fields.FullName' | trans }}</th>
+                            <td>{{ member.fullName }}</td>
+                        </tr>
+                        <tr>
+                            <th>{{ 'Model.Member.fields.FullNameYomi' | trans }}</th>
+                            <td>{{ member.fullNameYomi }}</td>
+                        </tr>
+                        <tr>
+                            <th>{{ 'Model.Member.fields.Group1' | trans }}</th>
+                            <td>{{ member.group1 }}</td>
+                        </tr>
+                        <tr>
+                            <th>{{ 'Model.Member.fields.Group2' | trans }}</th>
+                            <td>{{ member.group2 }}</td>
+                        </tr>
+                        <tr>
+                            <th>{{ 'Model.Member.fields.CommunicationAddress1' | trans }}</th>
+                            <td>{{ member.communicationAddress1 }}</td>
+                        </tr>
+                        <tr>
+                            <th>{{ 'Model.Member.fields.CommunicationAddress2' | trans }}</th>
+                            <td>{{ member.communicationAddress2 }}</td>
+                        </tr>
+                        <tr>
+                            <th>{{ 'Model.Member.fields.Role' | trans }}</th>
+                            <td>{{ member.role }}</td>
+                        </tr>
+                        <tr>
+                            <th>{{ 'Model.Member.fields.Status' | trans }}</th>
+                            <td>{{ member.statusLabel }}</td>
+                        </tr>
+                        <tr>
+                            <th>{{ 'Model.Member.fields.ExpiryDate' | trans }}</th>
+                            <td>{{ member.expiryDate ? member.expiryDate|date('Y-m-d') : '' }}</td>
+                        </tr>
+                        <tr>
+                            <th>{{ 'Model.Member.fields.Note' | trans }}</th>
+                            <td>{{ member.note }}</td>
+                        </tr>
+                        <tr>
+                            <th>{{ 'Model.Member.fields.CreatedAt' | trans }}</th>
+                            <td>{{ member.createdAt ? member.createdAt|date('Y-m-d H:i') : '' }}</td>
+                        </tr>
+                        <tr>
+                            <th>{{ 'Model.Member.fields.UpdatedAt' | trans }}</th>
+                            <td>{{ member.updatedAt ? member.updatedAt|date('Y-m-d H:i') : '' }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <strong>サブメニュー</strong>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="text-muted small">貸出中数</span>
+                        <span class="fw-semibold">{{ checkoutCount }}</span>
+                    </div>
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <span class="text-muted small">予約中数</span>
+                        <span class="fw-semibold">{{ reservationCount }}</span>
+                    </div>
+                    {% if not isActive %}
+                        <div class="alert alert-secondary small py-2 mb-3">
+                            この利用者は無効のため貸出予約操作ができません。
+                        </div>
+                    {% endif %}
+                    <div class="d-grid gap-2">
+                        <a class="btn btn-outline-primary" href="{{ path('app_member_edit', {'id': member.id}) }}">編集</a>
+                        <a class="btn btn-outline-success {% if not isActive %}disabled{% endif %}" {% if not isActive %}aria-disabled="true" tabindex="-1"{% endif %} href="{{ path('app_circulation_checkout_page', {'memberIdentifier': member.identifier}) }}">貸出</a>
+                        <a class="btn btn-outline-secondary {% if not isActive %}disabled{% endif %}" {% if not isActive %}aria-disabled="true" tabindex="-1"{% endif %} href="{{ path('app_circulation_reserve_page') }}">予約</a>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}

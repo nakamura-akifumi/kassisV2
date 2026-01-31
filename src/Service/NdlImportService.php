@@ -70,6 +70,10 @@ class NdlImportService
         if ($manifestation === null) {
             return null;
         }
+        $identifierFromInput = str_replace('-', '', trim($rawIsbn));
+        if ($identifierFromInput !== '') {
+            $manifestation->setIdentifier($identifierFromInput);
+        }
         $this->entityManager->persist($manifestation);
         $this->entityManager->flush();
 

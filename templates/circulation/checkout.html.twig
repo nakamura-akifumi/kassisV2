@@ -7,7 +7,7 @@
     <div class="d-flex align-items-center justify-content-between mb-3">
         <div>
             <h1 class="h4 mb-1">貸出</h1>
-            <p class="text-muted small mb-0">利用者識別子と貸出するManifestation識別子を読み取ります。</p>
+            <p class="text-muted small mb-0">{{ 'Model.Member.display_identifier'|trans }}と貸出する{{ 'Model.Manifestation.display_identifier'|trans }}を読み取ります。</p>
         </div>
         <a class="btn btn-outline-secondary btn-sm" href="{{ path('app_circulation_index') }}">メニューへ</a>
     </div>
@@ -28,20 +28,20 @@
                 <div class="card-body">
                     <form id="checkout-form">
                         <div class="mb-3">
-                            <label class="form-label">利用者識別子</label>
+                            <label class="form-label">{{ 'Model.Member.display_identifier' |trans}}</label>
                             <div class="input-group">
-                                <input type="text" class="form-control" id="member-input" name="memberIdentifier" required autofocus="autofocus">
+                                <input type="text" class="form-control" id="member-input" name="memberIdentifier" required autofocus="autofocus" value="{{ memberIdentifier|default('') }}">
                                 <button type="button" class="btn btn-outline-secondary" id="member-set">確定</button>
                             </div>
                             <div class="form-text">読み取り後にEnterで確定できます。</div>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Manifestation識別子（1冊ずつ）</label>
+                            <label class="form-label">{{ 'Model.Manifestation.display_identifier' |trans}}</label>
                             <div class="input-group">
                                 <input type="text" class="form-control" id="manifestation-input" placeholder="読み取り後に貸出登録" disabled>
                                 <button type="button" class="btn btn-secondary" id="manifestation-add" disabled>貸出</button>
                             </div>
-                            <div class="form-text">利用者確定後、読み取り→Enterで即登録します。</div>
+                            <div class="form-text">利用者確定後、読み取り->Enterで即登録します。</div>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">直近の貸出</label>
@@ -57,6 +57,34 @@
                 </div>
             </div>
         </div>
+        <div class="col-lg-6">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header bg-white">
+                    <strong>利用者情報</strong>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <div class="text-muted small">氏名</div>
+                        <div class="fw-semibold" id="member-info-name">未確定</div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="text-muted small">現在の貸出数</div>
+                        <div class="fw-semibold" id="member-info-checkouts">-</div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="text-muted small">現在の予約数</div>
+                        <div class="fw-semibold" id="member-info-reservations">-</div>
+                    </div>
+                    <div>
+                        <div class="text-muted small">注記</div>
+                        <div class="border rounded p-2 bg-light small" id="member-info-note">-</div>
+                    </div>
+                </div>
+                <div class="card-footer bg-white small text-muted">
+                    利用者確定後に情報が表示されます。
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -68,6 +96,10 @@
     const manifestationInput = document.getElementById('manifestation-input');
     const manifestationAdd = document.getElementById('manifestation-add');
     const checkoutLog = document.getElementById('checkout-log');
+    const memberInfoName = document.getElementById('member-info-name');
+    const memberInfoCheckouts = document.getElementById('member-info-checkouts');
+    const memberInfoReservations = document.getElementById('member-info-reservations');
+    const memberInfoNote = document.getElementById('member-info-note');
     const dueDateValue = document.querySelector('[data-due-date]')?.getAttribute('data-due-date') || '';
     const queuedItems = [];
 
@@ -119,16 +151,43 @@
         const data = await response.json().catch(() => ({}));
         if (!response.ok || !data.exists) {
             setResult(checkoutResult, '利用者が見つかりません。', true);
+            setMemberInfo(null);
+            memberInput.focus();
+            return;
+        }
+        if (!data.isActive) {
+            setResult(checkoutResult, '利用者の状態が有効ではありません。', true);
+            setMemberInfo(null);
             memberInput.focus();
             return;
         }
 
         setResult(checkoutResult, '利用者確定: ' + (data.fullName || memberValue));
+        setMemberInfo(data, memberValue);
         manifestationInput.disabled = false;
         manifestationAdd.disabled = false;
         manifestationAdd.classList.remove('btn-secondary');
         manifestationAdd.classList.add('btn-primary');
         manifestationInput.focus();
+    }
+
+    function setMemberInfo(data, fallbackName = '') {
+        if (!data) {
+            memberInfoName.textContent = '未確定';
+            memberInfoCheckouts.textContent = '-';
+            memberInfoReservations.textContent = '-';
+            memberInfoNote.textContent = '-';
+            return;
+        }
+        memberInfoName.textContent = data.fullName || fallbackName || '未設定';
+        memberInfoCheckouts.textContent = Number.isFinite(data.checkoutCount)
+            ? String(data.checkoutCount)
+            : '-';
+        memberInfoReservations.textContent = Number.isFinite(data.reservationCount)
+            ? String(data.reservationCount)
+            : '-';
+        const note = (data.note || '').trim();
+        memberInfoNote.textContent = note !== '' ? note : 'なし';
     }
 
     function resetMember() {
@@ -138,6 +197,7 @@
         manifestationAdd.disabled = true;
         manifestationAdd.classList.remove('btn-primary');
         manifestationAdd.classList.add('btn-secondary');
+        setMemberInfo(null);
         memberInput.focus();
     }
 

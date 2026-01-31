@@ -40,5 +40,163 @@
             </div>
         </div>
     </div>
+
+    <div class="card shadow-sm mt-4">
+        <div class="card-header bg-white">
+            <strong>状況一覧</strong>
+        </div>
+        <div class="card-body">
+            <form class="row g-2 align-items-center" method="get" action="{{ path('app_circulation_index') }}">
+                <div class="col-sm-6 col-md-4">
+                    <label class="form-label small mb-1" for="status-type">表示区分</label>
+                    <select class="form-select" id="status-type" name="type">
+                        <option value="reserve" {% if type == 'reserve' %}selected{% endif %}>予約</option>
+                        <option value="checkout" {% if type == 'checkout' %}selected{% endif %}>貸出</option>
+                        <option value="return" {% if type == 'return' %}selected{% endif %}>返却</option>
+                    </select>
+                </div>
+                <div class="col-auto align-self-end">
+                    <button type="button" class="btn btn-outline-success" id="status-export-btn">エクスポート</button>
+                </div>
+            </form>
+        </div>
+        <div class="card-body p-0 border-top">
+            {% if type == 'reserve' %}
+                {% if reservations is empty %}
+                    <div class="p-3 small text-muted">予約データがありません。</div>
+                {% else %}
+                    <div class="table-responsive">
+                        <table class="table table-sm mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>予約日時</th>
+                                    <th>利用者</th>
+                                    <th>資料</th>
+                                    <th>ステータス</th>
+                                    <th>予約期限</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for reservation in reservations %}
+                                    <tr>
+                                        <td>{{ reservation.reservedAt|date('Y-m-d H:i') }}</td>
+                                        <td>
+                                            {{ reservation.member.fullName }}
+                                            <div class="text-muted small">{{ reservation.member.identifier }}</div>
+                                        </td>
+                                        <td>
+                                            {{ reservation.manifestation.title }}
+                                            <div class="text-muted small">{{ reservation.manifestation.identifier }}</div>
+                                        </td>
+                                        <td>{{ reservation.status }}</td>
+                                        <td>
+                                            {% if reservation.expiryDate %}
+                                                {{ reservation.expiryDate|date('Y-m-d H:i') }}
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% endif %}
+            {% else %}
+                {% if checkouts is empty %}
+                    <div class="p-3 small text-muted">
+                        {% if type == 'checkout' %}
+                            貸出データがありません。
+                        {% else %}
+                            返却データがありません。
+                        {% endif %}
+                    </div>
+                {% else %}
+                    <div class="table-responsive">
+                        <table class="table table-sm mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    {% if type == 'checkout' %}
+                                        <th>貸出日時</th>
+                                        <th>利用者</th>
+                                        <th>資料</th>
+                                        <th>返却期限</th>
+                                        <th>ステータス</th>
+                                    {% else %}
+                                        <th>返却日時</th>
+                                        <th>利用者</th>
+                                        <th>資料</th>
+                                        <th>貸出日時</th>
+                                        <th>ステータス</th>
+                                    {% endif %}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for checkout in checkouts %}
+                                    {% set statusLabel = checkout.status == 'checked_out' ? '貸出中' : (checkout.status == 'returned' ? '返却済' : checkout.status) %}
+                                    <tr>
+                                        {% if type == 'checkout' %}
+                                            <td>{{ checkout.checkedOutAt|date('Y-m-d H:i') }}</td>
+                                            <td>
+                                                {{ checkout.member.fullName }}
+                                                <div class="text-muted small">{{ checkout.member.identifier }}</div>
+                                            </td>
+                                            <td>
+                                                {{ checkout.manifestation.title }}
+                                                <div class="text-muted small">{{ checkout.manifestation.identifier }}</div>
+                                            </td>
+                                            <td>
+                                                {% if checkout.dueDate %}
+                                                    {{ checkout.dueDate|date('Y-m-d') }}
+                                                {% else %}
+                                                    -
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ statusLabel }}</td>
+                                        {% else %}
+                                            <td>
+                                                {% if checkout.checkedInAt %}
+                                                    {{ checkout.checkedInAt|date('Y-m-d H:i') }}
+                                                {% else %}
+                                                    -
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {{ checkout.member.fullName }}
+                                                <div class="text-muted small">{{ checkout.member.identifier }}</div>
+                                            </td>
+                                            <td>
+                                                {{ checkout.manifestation.title }}
+                                                <div class="text-muted small">{{ checkout.manifestation.identifier }}</div>
+                                            </td>
+                                            <td>{{ checkout.checkedOutAt|date('Y-m-d H:i') }}</td>
+                                            <td>{{ statusLabel }}</td>
+                                        {% endif %}
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
 </div>
+
+<script>
+    const typeSelect = document.getElementById('status-type');
+    const exportButton = document.getElementById('status-export-btn');
+    if (typeSelect) {
+        typeSelect.addEventListener('change', () => {
+            typeSelect.form.submit();
+        });
+    }
+    if (typeSelect && exportButton) {
+        exportButton.addEventListener('click', () => {
+            const typeValue = typeSelect.value || 'reserve';
+            const url = '{{ path('app_circulation_export') }}' + '?type=' + encodeURIComponent(typeValue);
+            window.location.href = url;
+        });
+    }
+</script>
 {% endblock %}

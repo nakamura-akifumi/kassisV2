@@ -3,8 +3,8 @@ SystemTitle:
   NavbarBrandTitle: "kassisV2"
 Screen:
   Manifestation:
-    Index: "書誌一覧"
-    Search: "書誌検索"
+    Index: "資料一覧"
+    Search: "資料検索"
     Show: "詳細表示"
     Create: "新規登録"
     NoRecordFound: "該当する情報が見つかりませんでした"
@@ -16,7 +16,9 @@ Model:
     search: "検索"
     operation: "操作"
   Manifestation:
-    name: "書誌"
+    name: "資料"
+    display_identifier: "資料識別子"
+    not_found: "該当する資料が見つかりませんでした"
     fields:
       Id: "ID"
       Title: "タイトル"
@@ -51,6 +53,7 @@ Model:
       UpdatedAt: "更新日時"
   Member:
     name: "利用者"
+    display_identifier: "利用者識別子"
     fields:
       Id: "ID"
       Identifier: "識別子"
